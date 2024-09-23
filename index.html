@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<!-- saved from url=(0017)https://aamat.se/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Lunch Randomizer Carousel</title>
+        <style>
+            body {
+                display: flex;
+                flex-direction: column;
+                justify-content: center; /* Center the content horizontally */
+                align-items: center;     /* Center the content vertically */
+                height: 100vh;
+                padding: 20px;
+                background-color: #f0f0f0;
+                font-family: Arial, sans-serif;
+                position: relative;
+            }
+
+            /* For smaller screens, reduce padding and font sizes */
+            @media (max-width: 600px) {
+                #carouselContainer {
+                    width: 90%; /* Adjust width to fit smaller screens */
+                    height: auto; /* Let height adjust automatically */
+                }
+
+                .carousel-item {
+                    font-size: 16px; /* Decrease font size for smaller screens */
+                    height: 40px; /* Adjust item height */
+                    line-height: 40px;
+                }
+
+                #spinButton, #resetButton {
+                    font-size: 16px; /* Reduce button font size */
+                    padding: 8px 16px; /* Smaller buttons */
+                }
+
+                #options {
+                    width: 100%; /* Make the selection box full width */
+                    position: static; /* Stack it below carousel */
+                    margin-top: 20px;
+                }
+
+                #options-container {
+                    width: 100%; /* Full width on small screens */
+                    text-align: center; /* Center everything */
+                }
+
+                #toggle-options {
+                    display: block; /* Show the toggle button */
+                    width: 100%;
+                    padding: 10px;
+                    background-color: #00beac;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                    margin-bottom: 10px;
+                }
+
+                select {
+                    width: 100%; /* Make select full-width on mobile */
+                    font-size: 14px;
+                    height: 150px;
+                }
+            }
+            
+            /* Center carousel container and button */
+            #center-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center; /* Center spin and reset button under the carousel */
+            }
+    
+            #carouselContainer {
+                position: relative;
+                width: 300px;
+                height: 150px;
+                overflow: hidden;
+                border: 2px solid #00beac;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                background-color: white;
+            }
+    
+            #carousel {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transform: translateY(0);
+                transition: transform 5s ease-out;
+            }
+    
+            .carousel-item {
+                font-size: 20px;
+                height: 50px;
+                line-height: 50px;
+                color: #008276;
+                position: relative;
+                width: 100%;
+                text-align: center;
+                cursor: pointer;
+            }
+    
+            .carousel-item::after {
+                content: "";
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 1px;
+                background-color: #ddd;
+            }
+    
+            #spinButton, #resetButton {
+                margin-top: 20px;
+                padding: 10px 20px;
+                font-size: 18px;
+                background-color: #00beac;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
+    
+            #spinButton:hover, #resetButton:hover {
+                background-color: #008276;
+            }
+    
+            #resetButton {
+                display: none;
+            }
+    
+            #options {
+                position: absolute;
+                right: 20px; /* Stay on the right side */
+                width: 200px;
+                top: 50%;
+                transform: translateY(-50%);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                display: none; /* Hide by default */
+            }
+
+            #toggle-options {
+                display: block; /* Show the toggle button */
+                width: 100%;
+                padding: 10px;
+                background-color: #00beac;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                margin-top: 20px;
+                margin-bottom: 10px;
+            }
+    
+            select {
+                width: 100%;
+                height: 400px;
+                padding: 5px;
+            }
+    
+            #arrow {
+                position: absolute;
+                top: 50%;
+                left: 0;
+                transform: translateY(-50%);
+                width: 0;
+                height: 0;
+                border-top: 15px solid transparent;
+                border-bottom: 15px solid transparent;
+                border-left: 20px solid #ff6347;
+            }
+
+            /* Arrow animation */
+            @keyframes arrowBounce {
+                0%, 100% { transform: translateY(-50%) translateX(0); }
+                50% { transform: translateY(-50%) translateX(-5px); }
+            }
+
+            #arrow.spin {
+                animation: arrowBounce 0.5s infinite;
+            }
+    
+            #toast {
+                visibility: hidden;
+                min-width: 250px;
+                background-color: #333;
+                color: white;
+                text-align: center;
+                border-radius: 2px;
+                padding: 16px;
+                position: fixed;
+                z-index: 1;
+                left: 50%;
+                bottom: 30px;
+                font-size: 17px;
+                transform: translateX(-50%);
+            }
+    
+            #toast.show {
+                visibility: visible;
+                animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            }
+    
+            @keyframes fadein {
+                from { bottom: 0; opacity: 0; }
+                to { bottom: 30px; opacity: 1; }
+            }
+    
+            @keyframes fadeout {
+                from { bottom: 30px; opacity: 1; }
+                to { bottom: 0; opacity: 0; }
+            }
+    
+            /* Modal styling */
+            #info-modal {
+                display: none;
+                position: fixed;
+                z-index: 100;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+            }
+    
+            #info-content {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: white;
+                padding: 20px;
+                border-radius: 10px;
+                max-width: 500px;
+                text-align: center;
+            }
+    
+            #close-info {
+                margin-top: 15px;
+                cursor: pointer;
+                padding: 8px;
+                background-color: #00beac;
+                color: white;
+                border: none;
+                border-radius: 5px;
+            }
+        </style>
+    </head>
+<body>
+
+    <div id="center-container">
+        <div id="carouselContainer">
+            <div id="carousel"><div class="carousel-item">KP</div><div class="carousel-item">Thap Thim (Thai)</div><div class="carousel-item">Surf Shack</div><div class="carousel-item">T.G.I Friday</div><div class="carousel-item">Dockside Burgers</div><div class="carousel-item">Rosegarden</div><div class="carousel-item">Laziza</div><div class="carousel-item">COOP Sallad</div><div class="carousel-item">Välfärden</div><div class="carousel-item">Locali</div><div class="carousel-item">Niagara</div><div class="carousel-item">Saluhallen</div><div class="carousel-item">Kolga</div><div class="carousel-item">Centralen</div><div class="carousel-item">MENYn</div><div class="carousel-item">Mrs Saigon</div><div class="carousel-item">Green Chili</div><div class="carousel-item">Victors</div><div class="carousel-item">Max</div><div class="carousel-item">Spoonery</div><div class="carousel-item">Slagthuset</div><div class="carousel-item">Dirty Taco</div><div class="carousel-item">Braseriet Sture 1912</div><div class="carousel-item">Mahalle</div><div class="carousel-item">Östergatan No. 25</div><div class="carousel-item">Pink Head Noodle Bar</div><div class="carousel-item">Namu</div><div class="carousel-item">Zócalo</div><div class="carousel-item">KP</div><div class="carousel-item">Thap Thim (Thai)</div><div class="carousel-item">Surf Shack</div><div class="carousel-item">T.G.I Friday</div><div class="carousel-item">Dockside Burgers</div><div class="carousel-item">Rosegarden</div><div class="carousel-item">Laziza</div><div class="carousel-item">COOP Sallad</div><div class="carousel-item">Välfärden</div><div class="carousel-item">Locali</div><div class="carousel-item">Niagara</div><div class="carousel-item">Saluhallen</div><div class="carousel-item">Kolga</div><div class="carousel-item">Centralen</div><div class="carousel-item">MENYn</div><div class="carousel-item">Mrs Saigon</div><div class="carousel-item">Green Chili</div><div class="carousel-item">Victors</div><div class="carousel-item">Max</div><div class="carousel-item">Spoonery</div><div class="carousel-item">Slagthuset</div><div class="carousel-item">Dirty Taco</div><div class="carousel-item">Braseriet Sture 1912</div><div class="carousel-item">Mahalle</div><div class="carousel-item">Östergatan No. 25</div><div class="carousel-item">Pink Head Noodle Bar</div><div class="carousel-item">Namu</div><div class="carousel-item">Zócalo</div><div class="carousel-item">KP</div><div class="carousel-item">Thap Thim (Thai)</div><div class="carousel-item">Surf Shack</div><div class="carousel-item">T.G.I Friday</div><div class="carousel-item">Dockside Burgers</div><div class="carousel-item">Rosegarden</div><div class="carousel-item">Laziza</div><div class="carousel-item">COOP Sallad</div><div class="carousel-item">Välfärden</div><div class="carousel-item">Locali</div><div class="carousel-item">Niagara</div><div class="carousel-item">Saluhallen</div><div class="carousel-item">Kolga</div><div class="carousel-item">Centralen</div><div class="carousel-item">MENYn</div><div class="carousel-item">Mrs Saigon</div><div class="carousel-item">Green Chili</div><div class="carousel-item">Victors</div><div class="carousel-item">Max</div><div class="carousel-item">Spoonery</div><div class="carousel-item">Slagthuset</div><div class="carousel-item">Dirty Taco</div><div class="carousel-item">Braseriet Sture 1912</div><div class="carousel-item">Mahalle</div><div class="carousel-item">Östergatan No. 25</div><div class="carousel-item">Pink Head Noodle Bar</div><div class="carousel-item">Namu</div><div class="carousel-item">Zócalo</div><div class="carousel-item">KP</div><div class="carousel-item">Thap Thim (Thai)</div><div class="carousel-item">Surf Shack</div><div class="carousel-item">T.G.I Friday</div><div class="carousel-item">Dockside Burgers</div><div class="carousel-item">Rosegarden</div><div class="carousel-item">Laziza</div><div class="carousel-item">COOP Sallad</div><div class="carousel-item">Välfärden</div><div class="carousel-item">Locali</div><div class="carousel-item">Niagara</div><div class="carousel-item">Saluhallen</div><div class="carousel-item">Kolga</div><div class="carousel-item">Centralen</div><div class="carousel-item">MENYn</div><div class="carousel-item">Mrs Saigon</div><div class="carousel-item">Green Chili</div><div class="carousel-item">Victors</div><div class="carousel-item">Max</div><div class="carousel-item">Spoonery</div><div class="carousel-item">Slagthuset</div><div class="carousel-item">Dirty Taco</div><div class="carousel-item">Braseriet Sture 1912</div><div class="carousel-item">Mahalle</div><div class="carousel-item">Östergatan No. 25</div><div class="carousel-item">Pink Head Noodle Bar</div><div class="carousel-item">Namu</div><div class="carousel-item">Zócalo</div></div>
+            <div id="arrow"></div>
+        </div>
+        <button id="spinButton">Spin</button>
+        <button id="resetButton">Reset</button>
+    </div>
+
+    <div id="options-container">
+        <button id="toggle-options">Show Options</button>
+        <div id="options">
+            <h3>Select Restaurants</h3>
+            <select id="restaurant-select" multiple=""><option value="KP">KP</option><option value="Thap Thim (Thai)">Thap Thim (Thai)</option><option value="Surf Shack">Surf Shack</option><option value="T.G.I Friday">T.G.I Friday</option><option value="Dockside Burgers">Dockside Burgers</option><option value="Rosegarden">Rosegarden</option><option value="Laziza">Laziza</option><option value="COOP Sallad">COOP Sallad</option><option value="Välfärden">Välfärden</option><option value="Locali">Locali</option><option value="Niagara">Niagara</option><option value="Saluhallen">Saluhallen</option><option value="Kolga">Kolga</option><option value="Centralen">Centralen</option><option value="MENYn">MENYn</option><option value="Mrs Saigon">Mrs Saigon</option><option value="Green Chili">Green Chili</option><option value="Victors">Victors</option><option value="Max">Max</option><option value="Spoonery">Spoonery</option><option value="Slagthuset">Slagthuset</option><option value="Dirty Taco">Dirty Taco</option><option value="Braseriet Sture 1912">Braseriet Sture 1912</option><option value="Mahalle">Mahalle</option><option value="Östergatan No. 25">Östergatan No. 25</option><option value="Pink Head Noodle Bar">Pink Head Noodle Bar</option><option value="Namu">Namu</option><option value="Zócalo">Zócalo</option></select>
+        </div>
+    </div>
+
+    <div id="toast">Restaurant Selected!</div>
+
+    <!-- Modal for info -->
+    <div id="info-modal">
+        <div id="info-content">
+            <h4 id="modal-title"></h4>
+            <p id="modal-description"></p>
+            <p><a id="modal-link" href="https://aamat.se/#" target="_blank">View Menu</a></p>
+            <button id="close-info">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // List of restaurants near reMalmö Centralstation
+        const restaurants = [
+            { name: "KP", description: "A cozy restaurant offering a modern and diverse lunch buffet, including traditional Swedish dishes and vegetarian options. It's located at Posthusplatsen 4, Malmö, with a high-ceiling elegant atmosphere.", menu: "https://restaurangkp.se/lunchbuffe/" },
+            { name: "Thap Thim (Thai)", description: "Traditional Thai cuisine with a focus on the unique flavors of Isaan, a northeastern region in Thailand. Located on Västergatan 9, Malmö.", menu: "https://thapthim.se/meny" },
+            { name: "Surf Shack", description: "Known for its handcrafted smash burgers and fries, Surf Shack offers a relaxed dining experience in Malmö with a focus on high-quality burgers and a customizable menu.", menu: "https://www.surfshacksmashburgers.com/" },
+            { name: "T.G.I Friday", description: "TGI Fridays brings classic American dining to Lilla Torg in Malmö, with a focus on burgers, ribs, steaks, and hearty American fare.", menu: "https://www.fridays.se" },
+            { name: "Dockside Burgers", description: "Dockside serves Swedish, ecological, grass-fed beef burgers made fresh daily with a special blend of chuck, brisket, and beef shank. Located at Dockplatsen in Västra Hamnen, Malmö.", menu: "https://malmo.docksideburgers.se/lunchmeny/" },
+            { name: "Rosegarden", description: "An extensive Asian buffet featuring Chinese, Thai, sushi, salads, and more. Located at Stora Nygatan 59, Malmö.", menu: "https://rosegarden.se/locations/malmogrand" },
+            { name: "Laziza", description: "A Lebanese lunch buffet with a variety of hot and cold mezze, salads, dips, and hearty stews. Located on Baltzarsgatan, Malmö.", menu: "https://www.laziza.se/lunch/" },
+            { name: "COOP Sallad", description: "Offers fresh salads for a quick and healthy lunch in Malmö.", menu: "TBD" },
+            { name: "Välfärden", description: "Scandinavian and international cuisine, offering a mix of meat, vegetarian, and vegan dishes. Located at Anckargripsgatan 3.", menu: "https://valfarden.nu/dagens-lunch/" },
+            { name: "Locali", description: "Fresh, healthy poké bowls and street food inspired by Southern California, Hawaii, and Asia. Located at Nordenskiöldsgatan 11, Malmö.", menu: "https://localifood.se/meny" },
+            { name: "Niagara", description: "Offers a wide range of lunch options from Swedish dishes to international cuisines. Located at Neptuniplan 1.", menu: "https://restaurangniagara.se/lunch/" },
+            { name: "Saluhallen", description: "An indoor food market with a variety of eateries offering gourmet food and casual dining. Located at Gibraltargatan 6, Malmö.", menu: "https://www.malmosaluhall.se" },
+            { name: "Kolga", description: "Classic Swedish husmanskost (home-style cuisine) with daily specials, located at Hans Michelsensgatan 1, Malmö.", menu: "https://restaurangkolga.se/lunch/" },
+            { name: "Centralen", description: "Foodcourt located within Malmö Central Station.", menu: "TBD" },
+            { name: "MENYn", description: "Grill and salad options like kebabs, gyros, and salads in Gamla Staden, Malmö.", menu: "https://restaurantguru.com/MENYn-Malmo" },
+            { name: "Mrs Saigon", description: "Cozy Vietnamese restaurant offering pho, spring rolls, and more. Located at Engelbrektsgatan 17, Malmö.", menu: "https://www.mrs-saigon.se/" },
+            { name: "Green Chili", description: "Indian restaurant offering tandoori, curry, and vegetarian dishes with a modern twist. Located at Lilla Torg 7, Malmö.", menu: "https://greenchili.se" },
+            { name: "Victors", description: "Classic lunch menu with Swedish favorites like schnitzel and Caesar salad. Located at Lilla Torg 1, Malmö.", menu: "https://www.victors.se/meny" },
+            { name: "Max", description: "Swedish fast-food chain known for burgers, including vegetarian and vegan options. Located at Stortorget 25, Malmö.", menu: "https://www.max.se/maten/meny/" },
+            { name: "Spoonery", description: "Hearty soups, stews, and hotpots served with fresh, local ingredients. Multiple locations in Malmö.", menu: "https://spoonery.se" },
+            { name: "Slagthuset", description: "Slagthuset is a cozy restaurant located in Södra Hallen, Malmö, serving lunch every weekday from 11:30 to 13:30. They offer a daily meat, fish, or vegetarian dish, along with a salad bar, soup, bread, water, and coffee.", menu: "https://slagthuset.se/en/restaurant/" },
+            { name: "Dirty Taco", description: "Dirty Taco offers fusion tacos with flavors from around the world, including vegan and meat options. Located at Södra Vallgatan 3, Malmö.", menu: "https://www.dirtytaco.se/meny" },
+            { name: "Braseriet Sture 1912", description: "Brasserie Sture 1912 offers traditional Swedish dishes alongside international favorites like beef tartare, veal entrecôte, and oysters in an elegant setting. Located at Adelgatan 13, Malmö.", menu: "https://sture1912.com/en/" },
+            { name: "Mahalle", description: "Mahalle is a Lebanese restaurant offering authentic meze, kebabs, falafel, and salads with fresh ingredients. Located at Adelgatan 4, Malmö.", menu: "https://mahalle.nu/restauranter/malmo" },
+            { name: "Östergatan No. 25", description: "A cozy Italian pizzeria known for its pizza buffet during lunch and extensive salad bar. Located near Caroli Church in Malmö.", menu: "https://ostergatan25pizzeria.se" },
+            { name: "Pink Head Noodle Bar", description: "Located in Malmö Saluhall, Pink Head Noodle Bar is known for its creative noodle dishes including ramen and Dan Dan. A must-visit for noodle lovers.", menu: "https://pinkhead.webflow.io" },
+            { name: "Namu", description: "Namu is a modern Korean restaurant offering a fusion of Korean and Swedish flavors. Located at Landbygatan 5, Malmö.", menu: "https://namu.nu" },
+            { name: "Zócalo", description: "Zócalo offers fresh Mexican cuisine inspired by the taquerias of San Francisco’s Mission District. Located at Södergatan 3, Malmö.", menu: "https://zocalo.restaurant/food/" }
+        ];
+
+        let activeRestaurants = [...restaurants];
+
+        const carousel = document.getElementById('carousel');
+        const restaurantSelect = document.getElementById('restaurant-select');
+        
+        const spinButton = document.getElementById('spinButton');
+        const resetButton = document.getElementById('resetButton');
+        const infoModal = document.getElementById('info-modal');
+        const infoTitle = document.getElementById('modal-title');
+        const infoDescription = document.getElementById('modal-description');
+        const infoLink = document.getElementById('modal-link');
+        const closeInfo = document.getElementById('close-info');
+        const toast = document.getElementById('toast');
+
+        // Populate multi-select with restaurant options
+        function populateSelectBox() {
+            restaurantSelect.innerHTML = '';
+            restaurants.forEach((restaurant) => {
+                const option = document.createElement('option');
+                option.value = restaurant.name;
+                option.innerText = restaurant.name;
+                option.selected = true;
+                restaurantSelect.appendChild(option);
+            });
+        }
+
+        // Create items for the carousel
+        function renderCarousel() {
+            activeRestaurants.forEach((restaurant) => {
+                const item = document.createElement('div');
+                item.className = 'carousel-item';
+                item.innerText = restaurant.name;
+                item.addEventListener('click', () => showInfo(restaurant));
+                carousel.appendChild(item);
+            });
+        }
+
+        // Show restaurant info in modal
+        function showInfo(restaurant) {
+            infoTitle.innerText = restaurant.name;
+            infoDescription.innerText = restaurant.description;
+            infoLink.href = restaurant.menu;
+            infoModal.style.display = 'block';
+        }
+
+        // Hide info modal
+        closeInfo.addEventListener('click', function() {
+            infoModal.style.display = 'none';
+        });
+
+        // Handle selection change in multi-select
+        restaurantSelect.addEventListener('change', function() {
+            const selectedOptions = Array.from(restaurantSelect.selectedOptions).map(option => option.value);
+            activeRestaurants = restaurants.filter(r => selectedOptions.includes(r.name));
+            carousel.innerHTML = '';
+            duplicateItems(3);
+        });
+
+        // Pre-calculate how many duplicates of the list are needed
+        function duplicateItems(minSpins) {
+            const totalItems = activeRestaurants.length * minSpins + activeRestaurants.length;
+            const duplicateCount = Math.ceil(totalItems / activeRestaurants.length);  // How many times to repeat
+            for (let i = 0; i < duplicateCount; i++) {
+                renderCarousel();
+            }
+        }
+
+        // Initial rendering
+        populateSelectBox();
+        duplicateItems(3);  // Render enough items for a minimum of 3 full spins
+
+        let spinning = false;
+
+        const arrow = document.getElementById('arrow');
+
+        spinButton.addEventListener('click', function() {
+            if (!spinning) {
+                spinning = true;
+
+                // Add animation to arrow
+                arrow.classList.add('spin');
+
+                // Hide Spin button and reset Reset button
+                spinButton.style.display = "none";
+                resetButton.style.display = "none";
+
+                // Calculate a minimum of 3 full rounds plus the random restaurant
+                const minSpins = 3;
+                const randomIndex = Math.floor(Math.random() * activeRestaurants.length);
+                const totalSpins = (minSpins * activeRestaurants.length) + randomIndex;
+
+                // Calculate the item height and center adjustment based on arrow position
+                const itemHeight = 50;  // Fixed height per item
+                const arrowPositionCorrection = (carouselContainer.offsetHeight / 2) - (itemHeight / 2);
+
+                // Offset calculated to align selected option with the arrow tip
+                const offset = -((totalSpins * itemHeight) - arrowPositionCorrection); 
+                carousel.style.transition = 'transform 5s ease-out';
+                carousel.style.transform = `translateY(${offset}px)`;
+
+                setTimeout(() => {
+                    const selectedRestaurant = activeRestaurants[randomIndex];
+                    const toast = document.getElementById('toast');
+                    toast.innerText = `Selected Restaurant: ${selectedRestaurant.name}`;
+                    toast.className = "show";
+                    setTimeout(() => {
+                        toast.className = toast.className.replace("show", "");
+                    }, 3000);
+
+                    // Remove arrow animation
+                    arrow.classList.remove('spin');
+                    spinning = false;
+
+                    // Show Reset button after the spin
+                    resetButton.style.display = "block";
+                }, 5000); // Delay based on the longer spin time
+            }
+        });
+
+        // Toggle the visibility of the options
+        document.getElementById('toggle-options').addEventListener('click', function() {
+            const options = document.getElementById('options');
+            if (options.style.display === 'none' || options.style.display === '') {
+                options.style.display = 'block';
+                this.innerText = 'Hide Options';
+            } else {
+                options.style.display = 'none';
+                this.innerText = 'Show Options';
+            }
+        });
+
+        resetButton.addEventListener('click', function() {
+            // Reset Logic
+            carousel.style.transition = 'none';  // Remove transition for reset
+            carousel.style.transform = 'translateY(0)';  // Reset position
+            resetButton.style.display = "none";  // Hide Reset button
+            spinButton.style.display = "block";  // Show Spin button
+        });
+    </script>
+
+
+
+</body></html>
