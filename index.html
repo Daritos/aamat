@@ -3,86 +3,186 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Food?</title>
+        <title>Malmö Lunch Randomizer</title>
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
         <style>
+            :root {
+                --primary-color: #2196F3;
+                --primary-dark: #1976D2;
+                --primary-light: #BBDEFB;
+                --secondary-color: #FF5722;
+                --bg-color: #f5f7fa;
+                --card-bg: white;
+                --text-dark: #212121;
+                --text-medium: #424242;
+                --text-light: #757575;
+                --border-color: #e0e0e0;
+                --success-color: #4CAF50;
+                --warning-color: #FF9800;
+                --shadow: 0 2px 4px rgba(0,0,0,0.1);
+                --shadow-hover: 0 4px 8px rgba(0,0,0,0.15);
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
             body {
-                display: flex;
-                flex-direction: column;
-                justify-content: center; /* Center the content horizontally */
-                align-items: center;     /* Center the content vertically */
-                height: 100vh;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+                background-color: var(--bg-color);
+                min-height: 100vh;
                 padding: 20px;
-                background-color: #f0f0f0;
-                font-family: Arial, sans-serif;
+                color: var(--text-dark);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .container {
+                max-width: 1400px;
+                width: 100%;
+            }
+
+            .main-content {
+                display: block;
                 position: relative;
             }
 
-            /* For smaller screens, reduce padding and font sizes */
+            /* Center Spinner Section */
+            .spinner-section {
+                background: var(--card-bg);
+                border-radius: 8px;
+                padding: 30px;
+                box-shadow: var(--shadow);
+                border: 1px solid var(--border-color);
+                margin: 0 auto;
+                max-width: 800px;
+            }
+
+            .stats-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding: 15px;
+                background: var(--bg-color);
+                border-radius: 6px;
+                border: 1px solid var(--border-color);
+            }
+
+            .stat-item {
+                text-align: center;
+            }
+
+            .stat-item.clickable {
+                cursor: pointer;
+                transition: all 0.3s;
+                padding: 10px;
+                border-radius: 8px;
+            }
+
+            .stat-item.clickable:hover {
+                background-color: rgba(0, 190, 172, 0.1);
+                transform: translateY(-2px);
+            }
+
+            .stat-item.clickable:active {
+                transform: translateY(0);
+            }
+
+            .stat-value {
+                font-size: 1.5em;
+                font-weight: bold;
+                color: var(--primary-color);
+            }
+
+            .stat-item.clickable .stat-value {
+                position: relative;
+            }
+
+            .stat-item.clickable .stat-value::after {
+                content: '⚙️';
+                font-size: 0.6em;
+                position: absolute;
+                top: -5px;
+                right: -15px;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            .stat-item.clickable:hover .stat-value::after {
+                opacity: 1;
+            }
+
+            .stat-label {
+                font-size: 0.85em;
+                color: var(--text-light);
+                margin-top: 5px;
+            }
+
+            .stat-item.clickable .stat-label {
+                font-weight: 600;
+            }
+
+            /* Responsive adjustments */
             @media (max-width: 600px) {
+                header h1 {
+                    font-size: 1.8em;
+                }
+
+                .stats-bar {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+
                 #carouselContainer {
-                    width: 90%; /* Adjust width to fit smaller screens */
-                    height: auto; /* Let height adjust automatically */
+                    width: 100%;
+                    height: 120px;
                 }
 
                 .carousel-item {
-                    font-size: 16px; /* Decrease font size for smaller screens */
-                    height: 40px; /* Adjust item height */
+                    font-size: 14px;
+                    height: 40px;
                     line-height: 40px;
                 }
 
-                #spinButton, #resetButton {
-                    font-size: 16px; /* Reduce button font size */
-                    padding: 8px 16px; /* Smaller buttons */
+                .button-group {
+                    flex-direction: column;
                 }
 
-                #options {
-                    width: 100%; /* Make the selection box full width */
-                    position: static; /* Stack it below carousel */
-                    margin-top: 20px;
-                }
-
-                #options-container {
-                    width: 100%; /* Full width on small screens */
-                    text-align: center; /* Center everything */
-                }
-
-                #toggle-options {
-                    display: block; /* Show the toggle button */
+                .button-group button {
                     width: 100%;
-                    padding: 10px;
-                    background-color: #00beac;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    margin-top: 20px;
-                    margin-bottom: 10px;
                 }
 
-                select {
-                    width: 100%; /* Make select full-width on mobile */
-                    font-size: 14px;
-                    height: 150px;
+                .filters-sidebar {
+                    width: 100%;
+                    max-width: 100%;
                 }
             }
-            
-            /* Center carousel container and button */
+
+            /* Carousel Section */
             #center-container {
                 display: flex;
                 flex-direction: column;
-                align-items: center; /* Center spin and reset button under the carousel */
+                align-items: center;
+                margin: 0 auto;
             }
-    
+
             #carouselContainer {
                 position: relative;
-                width: 300px;
+                width: 100%;
+                max-width: 500px;
                 height: 150px;
                 overflow: hidden;
-                border: 2px solid #00beac;
-                border-radius: 10px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                border: 2px solid var(--primary-color);
+                border-radius: 6px;
+                box-shadow: var(--shadow);
                 background-color: white;
+                margin-bottom: 20px;
             }
-    
+
             #carousel {
                 display: flex;
                 flex-direction: column;
@@ -91,91 +191,171 @@
                 transform: translateY(0);
                 transition: transform 5s ease-out;
             }
-    
+
             .carousel-item {
-                font-size: 20px;
+                font-size: 18px;
                 height: 50px;
                 line-height: 50px;
-                color: #008276;
+                color: var(--text-dark);
                 position: relative;
                 width: 100%;
                 text-align: center;
                 cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 0 40px;
+                transition: background-color 0.2s;
             }
-    
+
+            .carousel-item:hover {
+                background-color: var(--bg-color);
+            }
+
             .carousel-item::after {
                 content: "";
                 position: absolute;
                 bottom: 0;
-                left: 0;
-                width: 100%;
+                left: 10%;
+                width: 80%;
                 height: 1px;
-                background-color: #ddd;
+                background-color: var(--border-color);
             }
-    
-            #spinButton, #resetButton {
-                margin-top: 20px;
+
+            .carousel-item .favorite-indicator {
+                color: var(--warning-color);
+                font-size: 16px;
+            }
+
+            .carousel-item .visit-count {
+                font-size: 12px;
+                color: var(--text-light);
+                margin-left: 5px;
+            }
+
+            .cuisine-tag {
+                display: inline-block;
+                padding: 3px 10px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 500;
+                margin: 0 2px;
+                background-color: var(--primary-light);
+                color: var(--primary-dark);
+                border: 1px solid var(--primary-color);
+            }
+
+            .cuisine-tag.dietary {
+                background-color: #e8f5e9;
+                color: var(--success-color);
+                border-color: var(--success-color);
+            }
+
+            /* Button Styles */
+            .button-group {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            button {
                 padding: 10px 20px;
-                font-size: 18px;
-                background-color: #00beac;
-                color: white;
+                font-size: 15px;
+                font-weight: 500;
                 border: none;
-                border-radius: 5px;
+                border-radius: 4px;
                 cursor: pointer;
-                transition: background-color 0.3s;
+                transition: all 0.2s;
+                box-shadow: var(--shadow);
             }
-    
-            #spinButton:hover, #resetButton:hover {
-                background-color: #008276;
+
+            button:hover {
+                box-shadow: var(--shadow-hover);
             }
-    
+
+            button:active {
+                transform: scale(0.98);
+            }
+
+            .btn-primary {
+                background-color: var(--primary-color);
+                color: white;
+            }
+
+            .btn-primary:hover {
+                background-color: var(--primary-dark);
+            }
+
+            .btn-secondary {
+                background-color: #757575;
+                color: white;
+            }
+
+            .btn-secondary:hover {
+                background-color: #616161;
+            }
+
+            .btn-success {
+                background-color: var(--success-color);
+                color: white;
+            }
+
+            .btn-success:hover {
+                background-color: #45a049;
+            }
+
+            .btn-warning {
+                background-color: var(--warning-color);
+                color: white;
+            }
+
+            .btn-warning:hover {
+                background-color: #f57c00;
+            }
+
+            .btn-lucky {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+
+            .btn-lucky:hover {
+                background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            }
+
             #resetButton {
                 display: none;
             }
-    
-            #options {
-                position: absolute;
-                right: 20px; /* Stay on the right side */
-                width: 200px;
-                top: 50%;
-                transform: translateY(-50%);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                display: none; /* Hide by default */
+
+            .selection-message {
+                text-align: center;
+                margin-top: 15px;
+                font-size: 1.2em;
+                font-weight: 600;
+                color: var(--primary-color);
+                min-height: 30px;
+                animation: fadeIn 0.5s;
             }
 
-            #toggle-options {
-                display: block; /* Show the toggle button */
-                width: 100%;
-                padding: 10px;
-                background-color: #00beac;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                margin-top: 20px;
-                margin-bottom: 10px;
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
             }
-    
-            select {
-                width: 100%;
-                height: 400px;
-                padding: 5px;
-            }
-    
+
             #arrow {
                 position: absolute;
                 top: 50%;
-                left: 0;
+                left: 5px;
                 transform: translateY(-50%);
                 width: 0;
                 height: 0;
                 border-top: 15px solid transparent;
                 border-bottom: 15px solid transparent;
-                border-left: 20px solid #ff6347;
+                border-left: 20px solid var(--secondary-color);
+                z-index: 10;
             }
 
-            /* Arrow animation */
             @keyframes arrowBounce {
                 0%, 100% { transform: translateY(-50%) translateX(0); }
                 50% { transform: translateY(-50%) translateX(-5px); }
@@ -184,278 +364,1342 @@
             #arrow.spin {
                 animation: arrowBounce 0.5s infinite;
             }
-    
+
+
+            /* Filters Sidebar */
+            .filters-sidebar {
+                background: var(--card-bg);
+                border-radius: 8px;
+                padding: 25px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.2);
+                border: 1px solid var(--border-color);
+                max-height: 90vh;
+                overflow-y: auto;
+                position: fixed;
+                top: 50%;
+                right: 20px;
+                transform: translateY(-50%);
+                width: 90%;
+                max-width: 400px;
+                z-index: 998;
+                display: none;
+            }
+
+            .filters-sidebar.visible {
+                display: block;
+            }
+
+            .filters-sidebar h2 {
+                margin-bottom: 20px;
+                color: var(--text-dark);
+                font-size: 1.3em;
+                font-weight: 600;
+            }
+
+            .filters-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+
+            .close-filters-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                color: var(--text-light);
+                cursor: pointer;
+                padding: 0;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 5px;
+                transition: all 0.3s;
+            }
+
+            .close-filters-btn:hover {
+                background-color: #f0f0f0;
+                color: var(--text-dark);
+            }
+
+            .filter-section {
+                margin-bottom: 25px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .filter-section:last-child {
+                border-bottom: none;
+            }
+
+            .filter-section h3 {
+                margin-bottom: 12px;
+                color: var(--text-medium);
+                font-size: 0.95em;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .search-box {
+                width: 100%;
+                padding: 10px 12px;
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                font-size: 14px;
+                transition: border-color 0.2s;
+                background-color: white;
+            }
+
+            .search-box:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+            }
+
+            .checkbox-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .checkbox-label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                cursor: pointer;
+                padding: 5px;
+                border-radius: 5px;
+                transition: background-color 0.2s;
+            }
+
+            .checkbox-label:hover {
+                background-color: #f8f9fa;
+            }
+
+            .checkbox-label input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+            }
+
+            .restaurant-selection {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                max-height: 300px;
+                overflow-y: auto;
+                padding: 5px;
+                background: var(--bg-color);
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+            }
+
+            .restaurant-checkbox {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 8px;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+
+            .restaurant-checkbox:hover {
+                background-color: white;
+            }
+
+            .restaurant-checkbox input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                cursor: pointer;
+            }
+
+            .restaurant-checkbox label {
+                cursor: pointer;
+                flex: 1;
+                font-size: 14px;
+                color: var(--text-dark);
+            }
+
+            .price-filter {
+                display: flex;
+                gap: 10px;
+            }
+
+            .price-option {
+                flex: 1;
+                padding: 8px;
+                text-align: center;
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-weight: 500;
+                background-color: white;
+            }
+
+            .price-option:hover {
+                border-color: var(--primary-color);
+                background-color: var(--primary-light);
+            }
+
+            .price-option.active {
+                background-color: var(--primary-color);
+                border-color: var(--primary-color);
+                color: white;
+            }
+
+            .quick-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .quick-actions button {
+                width: 100%;
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            /* Toggle Options Button */
+            .toggle-filters-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                background-color: var(--primary-color);
+                color: white;
+                font-size: 24px;
+                border: none;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                z-index: 999;
+                transition: all 0.2s;
+            }
+
+            .toggle-filters-btn:hover {
+                background-color: var(--primary-dark);
+                transform: scale(1.05);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            }
+
+            /* Mobile specific adjustments */
+            @media (max-width: 600px) {
+                .filters-sidebar {
+                    right: 0;
+                    left: 0;
+                    width: 100%;
+                    max-width: 100%;
+                    border-radius: 0;
+                    top: 0;
+                    bottom: 0;
+                    transform: none;
+                    max-height: 100vh;
+                }
+            }
+
+            /* Backdrop overlay */
+            .filters-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 997;
+            }
+
+            .filters-backdrop.visible {
+                display: block;
+            }
+
+            /* Toast Notification */
             #toast {
                 visibility: hidden;
                 min-width: 250px;
                 background-color: #333;
                 color: white;
                 text-align: center;
-                border-radius: 2px;
-                padding: 16px;
+                border-radius: 10px;
+                padding: 16px 20px;
                 position: fixed;
-                z-index: 1;
+                z-index: 1000;
                 left: 50%;
                 bottom: 30px;
-                font-size: 17px;
+                font-size: 16px;
                 transform: translateX(-50%);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             }
-    
+
             #toast.show {
                 visibility: visible;
                 animation: fadein 0.5s, fadeout 0.5s 2.5s;
             }
-    
+
             @keyframes fadein {
                 from { bottom: 0; opacity: 0; }
                 to { bottom: 30px; opacity: 1; }
             }
-    
+
             @keyframes fadeout {
                 from { bottom: 30px; opacity: 1; }
                 to { bottom: 0; opacity: 0; }
             }
-    
+
             /* Modal styling */
             #info-modal {
                 display: none;
                 position: fixed;
-                z-index: 100;
+                z-index: 1000;
                 left: 0;
                 top: 0;
                 width: 100%;
                 height: 100%;
                 background-color: rgba(0, 0, 0, 0.5);
             }
-    
+
             #info-content {
                 position: absolute;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
                 background-color: white;
-                padding: 20px;
-                border-radius: 10px;
-                max-width: 500px;
-                text-align: center;
+                padding: 24px;
+                border-radius: 8px;
+                max-width: 600px;
+                width: 90%;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                border: 1px solid var(--border-color);
             }
-    
-            #close-info {
-                margin-top: 15px;
-                cursor: pointer;
-                padding: 8px;
-                background-color: #00beac;
-                color: white;
-                border: none;
-                border-radius: 5px;
+
+            #info-content h4 {
+                color: var(--text-dark);
+                font-size: 1.5em;
+                margin-bottom: 12px;
+                font-weight: 600;
+            }
+
+            #info-content p {
+                margin-bottom: 15px;
+                line-height: 1.6;
+                color: var(--text-medium);
+            }
+
+            #info-content .modal-tags {
+                margin: 15px 0;
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            #info-content .modal-info {
+                display: flex;
+                gap: 20px;
+                margin: 15px 0;
+                padding: 12px;
+                background: var(--bg-color);
+                border-radius: 4px;
+                border: 1px solid var(--border-color);
+            }
+
+            #info-content .info-item {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            #info-content .info-label {
+                font-size: 11px;
+                color: var(--text-light);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            #info-content .info-value {
+                font-size: 16px;
+                color: var(--text-dark);
+                font-weight: 600;
+            }
+
+            .modal-buttons {
+                display: flex;
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .modal-buttons button {
+                flex: 1;
+            }
+
+            #favorite-btn {
+                background-color: #ffc107;
+                color: var(--text-dark);
+            }
+
+            #favorite-btn.favorited {
+                background-color: #ffd700;
+            }
+
+            /* History Section */
+            .history-list {
+                max-height: 200px;
+                overflow-y: auto;
+                margin-top: 10px;
+            }
+
+            .history-item {
+                padding: 8px 12px;
+                background: var(--bg-color);
+                border-radius: 4px;
+                border: 1px solid var(--border-color);
+                margin-bottom: 6px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .history-item .name {
+                font-weight: 500;
+                color: var(--text-dark);
+                font-size: 14px;
+            }
+
+            .history-item .date {
+                font-size: 11px;
+                color: var(--text-light);
+            }
+
+            /* Scrollbar Styling */
+            .filters-sidebar::-webkit-scrollbar,
+            .history-list::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .filters-sidebar::-webkit-scrollbar-track,
+            .history-list::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+
+            .filters-sidebar::-webkit-scrollbar-thumb,
+            .history-list::-webkit-scrollbar-thumb {
+                background: var(--primary-color);
+                border-radius: 10px;
+            }
+
+            .filters-sidebar::-webkit-scrollbar-thumb:hover,
+            .history-list::-webkit-scrollbar-thumb:hover {
+                background: var(--primary-dark);
             }
         </style>
     </head>
 <body>
+    <div class="container">
+        <div class="main-content">
+            <!-- Main Spinner Section -->
+            <div class="spinner-section">
+                <!-- Statistics Bar -->
+                <div class="stats-bar" role="region" aria-label="Restaurant statistics">
+                    <div class="stat-item clickable" id="available-stat" title="Click to toggle filters" role="button" tabindex="0" aria-label="Toggle filters. Available restaurants count">
+                        <div class="stat-value" id="available-count" aria-live="polite">0</div>
+                        <div class="stat-label">Available</div>
+                    </div>
+                    <div class="stat-item" aria-label="Favorites count">
+                        <div class="stat-value" id="favorites-count">0</div>
+                        <div class="stat-label">Favorites</div>
+                    </div>
+                    <div class="stat-item" aria-label="Total visits count">
+                        <div class="stat-value" id="visits-count">0</div>
+                        <div class="stat-label">Visits</div>
+                    </div>
+                </div>
 
-    <div id="center-container">
-        <div id="carouselContainer">
-            <div id="carousel"></div>
-            <div id="arrow"></div>
+                <!-- Carousel -->
+                <div id="center-container">
+                    <div id="carouselContainer">
+                        <div id="carousel"></div>
+                        <div id="arrow"></div>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="spinButton" class="btn-primary" aria-label="Spin the wheel to select a random restaurant">Spin</button>
+                        <button id="quickPickButton" class="btn-success" aria-label="Quick pick a restaurant instantly">Quick Pick</button>
+                        <button id="luckyButton" class="btn-lucky" aria-label="Feeling lucky - pick a restaurant excluding last 10 visits">Feeling Lucky</button>
+                        <button id="resetButton" class="btn-secondary" aria-label="Reset the spinner">Reset</button>
+                    </div>
+                    <div id="selection-message" class="selection-message"></div>
+                </div>
+            </div>
+
+            <!-- Filters Sidebar -->
+            <div class="filters-sidebar">
+                <div class="filters-header">
+                    <h2>Filters & Options</h2>
+                    <button class="close-filters-btn" id="close-filters-btn" aria-label="Close filters">✕</button>
+                </div>
+
+                <!-- Search -->
+                <div class="filter-section">
+                    <h3 id="search-label">Search</h3>
+                    <input type="text" id="search-box" class="search-box" placeholder="Search restaurants..." aria-labelledby="search-label" aria-describedby="search-description">
+                    <span id="search-description" style="display: none;">Type to filter restaurants by name</span>
+                </div>
+
+                <!-- Restaurant Selection -->
+                <div class="filter-section">
+                    <h3>Select Restaurants</h3>
+                    <div class="restaurant-selection" id="restaurant-selection"></div>
+                </div>
+
+                <!-- Cuisine Filter -->
+                <div class="filter-section">
+                    <h3>Cuisine Type</h3>
+                    <div class="checkbox-group" id="cuisine-filters"></div>
+                </div>
+
+                <!-- Dietary Preferences -->
+                <div class="filter-section">
+                    <h3>Dietary Options</h3>
+                    <div class="checkbox-group" id="dietary-filters"></div>
+                </div>
+
+                <!-- Price Range -->
+                <div class="filter-section">
+                    <h3>Price Range</h3>
+                    <div class="price-filter">
+                        <div class="price-option active" data-price="1">€</div>
+                        <div class="price-option active" data-price="2">€€</div>
+                        <div class="price-option active" data-price="3">€€€</div>
+                    </div>
+                </div>
+
+                <!-- History Options -->
+                <div class="filter-section">
+                    <h3>Recent Visits</h3>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="exclude-recent">
+                        <span>Exclude recent visits (last 5)</span>
+                    </label>
+                    <div class="history-list" id="history-list"></div>
+                </div>
+
+                <!-- Time-Based Filter -->
+                <div class="filter-section">
+                    <h3>Opening Hours</h3>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-open-now">
+                        <span>Show only open now</span>
+                    </label>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="filter-section">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions">
+                        <button class="btn-primary" id="select-all">Select All</button>
+                        <button class="btn-secondary" id="deselect-all">Deselect All</button>
+                        <button class="btn-warning" id="clear-history">Clear History</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <button id="spinButton">Spin</button>
-        <button id="resetButton">Reset</button>
     </div>
 
-    <div id="options-container">
-        <button id="toggle-options">Show Options</button>
-        <div id="options">
-            <h3>Select Restaurants</h3>
-            <select id="restaurant-select" multiple></select>
-        </div>
-    </div>
+    <!-- Backdrop -->
+    <div class="filters-backdrop" id="filters-backdrop"></div>
 
-    <div id="toast">Restaurant Selected!</div>
+    <!-- Toggle Filters Button -->
+    <button class="toggle-filters-btn" id="toggle-filters-btn" aria-label="Toggle filters">
+        ☰
+    </button>
 
-    <!-- Modal for info -->
-    <div id="info-modal">
+    <!-- Toast Notification -->
+    <div id="toast" role="status" aria-live="polite" aria-atomic="true">Restaurant Selected!</div>
+
+    <!-- Screen reader announcements -->
+    <div id="sr-announcements" role="status" aria-live="polite" aria-atomic="true" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;"></div>
+
+    <!-- Restaurant Info Modal -->
+    <div id="info-modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
         <div id="info-content">
             <h4 id="modal-title"></h4>
+            <div class="modal-tags" id="modal-tags"></div>
+            <div class="modal-info">
+                <div class="info-item">
+                    <span class="info-label">Price</span>
+                    <span class="info-value" id="modal-price">€€</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Visits</span>
+                    <span class="info-value" id="modal-visits">0</span>
+                </div>
+                <div class="info-item" id="modal-distance-container">
+                    <span class="info-label">Distance</span>
+                    <span class="info-value" id="modal-distance">-</span>
+                </div>
+            </div>
             <p id="modal-description"></p>
-            <p><a id="modal-link" href="#" target="_blank">View Menu</a></p>
-            <button id="close-info">Close</button>
+            <div class="modal-info" id="modal-contact-info" style="flex-direction: column; gap: 8px;">
+                <div style="display: flex; gap: 20px;">
+                    <div class="info-item" style="flex: 1;">
+                        <span class="info-label">Hours Today</span>
+                        <span class="info-value" id="modal-hours">-</span>
+                    </div>
+                    <div class="info-item" style="flex: 1;" id="modal-phone-container">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value" id="modal-phone" style="font-size: 14px;">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="favorite-btn" class="btn-warning" aria-label="Add to favorites">Favorite</button>
+                <a id="modal-link" href="#" target="_blank" style="flex: 1;" rel="noopener noreferrer">
+                    <button class="btn-primary" style="width: 100%;">View Menu</button>
+                </a>
+                <a id="modal-maps-link" href="#" target="_blank" style="flex: 1;" rel="noopener noreferrer">
+                    <button class="btn-success" style="width: 100%;">Open in Maps</button>
+                </a>
+                <button id="close-info" class="btn-secondary" aria-label="Close dialog">Close</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // List of restaurants near reMalmö Centralstation
+        // Enhanced restaurant data with cuisine types, dietary options, price ranges, hours, and contact info
         const restaurants = [
-            //{ name: "KP", description: "A cozy restaurant offering a modern and diverse lunch buffet, including traditional Swedish dishes and vegetarian options. It's located at Posthusplatsen 4, Malmö, with a high-ceiling elegant atmosphere.", menu: "https://restaurangkp.se/lunchbuffe/" },
-            { name: "Thap Thim (Thai)", description: "Traditional Thai cuisine with a focus on the unique flavors of Isaan, a northeastern region in Thailand. Located on Västergatan 9, Malmö.", menu: "https://thapthim.se/meny" },
-            { name: "Surf Shack", description: "Known for its handcrafted smash burgers and fries, Surf Shack offers a relaxed dining experience in Malmö with a focus on high-quality burgers and a customizable menu.", menu: "https://www.surfshacksmashburgers.com/" },
-            //{ name: "T.G.I Friday", description: "TGI Fridays brings classic American dining to Lilla Torg in Malmö, with a focus on burgers, ribs, steaks, and hearty American fare.", menu: "https://www.fridays.se" },
-            { name: "Dockside Burgers", description: "Dockside serves Swedish, ecological, grass-fed beef burgers made fresh daily with a special blend of chuck, brisket, and beef shank. Located at Dockplatsen in Västra Hamnen, Malmö.", menu: "https://malmo.docksideburgers.se/lunchmeny/" },
-            { name: "Rosegarden", description: "An extensive Asian buffet featuring Chinese, Thai, sushi, salads, and more. Located at Stora Nygatan 59, Malmö.", menu: "https://rosegarden.se/locations/malmogrand" },
-            { name: "Laziza", description: "A Lebanese lunch buffet with a variety of hot and cold mezze, salads, dips, and hearty stews. Located on Baltzarsgatan, Malmö.", menu: "https://www.laziza.se/lunch/" },
-            { name: "COOP Sallad", description: "Offers fresh salads for a quick and healthy lunch in Malmö.", menu: "TBD" },
-            { name: "Välfärden", description: "Scandinavian and international cuisine, offering a mix of meat, vegetarian, and vegan dishes. Located at Anckargripsgatan 3.", menu: "https://valfarden.nu/dagens-lunch/" },
-            { name: "Locali", description: "Fresh, healthy poké bowls and street food inspired by Southern California, Hawaii, and Asia. Located at Nordenskiöldsgatan 11, Malmö.", menu: "https://localifood.se/meny" },
-            { name: "Niagara", description: "Offers a wide range of lunch options from Swedish dishes to international cuisines. Located at Neptuniplan 1.", menu: "https://restaurangniagara.se/lunch/" },
-            { name: "Saluhallen", description: "An indoor food market with a variety of eateries offering gourmet food and casual dining. Located at Gibraltargatan 6, Malmö.", menu: "https://www.malmosaluhall.se" },
-            { name: "Kolga", description: "Classic Swedish husmanskost (home-style cuisine) with daily specials, located at Hans Michelsensgatan 1, Malmö.", menu: "https://restaurangkolga.se/lunch/" },
-            { name: "Centralen", description: "Foodcourt located within Malmö Central Station.", menu: "TBD" },
-            { name: "MENYn", description: "Grill and salad options like kebabs, gyros, and salads in Gamla Staden, Malmö.", menu: "https://restaurantguru.com/MENYn-Malmo" },
-            { name: "Mrs Saigon", description: "Cozy Vietnamese restaurant offering pho, spring rolls, and more. Located at Engelbrektsgatan 17, Malmö.", menu: "https://www.mrs-saigon.se/" },
-            { name: "Green Chili", description: "Indian restaurant offering tandoori, curry, and vegetarian dishes with a modern twist. Located at Lilla Torg 7, Malmö.", menu: "https://greenchili.se" },
-            { name: "Victors", description: "Classic lunch menu with Swedish favorites like schnitzel and Caesar salad. Located at Lilla Torg 1, Malmö.", menu: "https://www.victors.se/meny" },
-            { name: "Max", description: "Swedish fast-food chain known for burgers, including vegetarian and vegan options. Located at Stortorget 25, Malmö.", menu: "https://www.max.se/maten/meny/" },
-            { name: "Spoonery", description: "Hearty soups, stews, and hotpots served with fresh, local ingredients. Multiple locations in Malmö.", menu: "https://spoonery.se" },
-            { name: "Slagthuset", description: "Slagthuset is a cozy restaurant located in Södra Hallen, Malmö, serving lunch every weekday from 11:30 to 13:30. They offer a daily meat, fish, or vegetarian dish, along with a salad bar, soup, bread, water, and coffee.", menu: "https://slagthuset.se/en/restaurant/" },
-            { name: "Dirty Taco", description: "Dirty Taco offers fusion tacos with flavors from around the world, including vegan and meat options. Located at Södra Vallgatan 3, Malmö.", menu: "https://www.dirtytaco.se/meny" },
-            { name: "Braseriet Sture 1912", description: "Brasserie Sture 1912 offers traditional Swedish dishes alongside international favorites like beef tartare, veal entrecôte, and oysters in an elegant setting. Located at Adelgatan 13, Malmö.", menu: "https://sture1912.com/en/" },
-            { name: "Östergatan No. 25", description: "A cozy Italian pizzeria known for its pizza buffet during lunch and extensive salad bar. Located near Caroli Church in Malmö.", menu: "https://ostergatan25pizzeria.se" },
-            { name: "Pink Head Noodle Bar", description: "Located in Malmö Saluhall, Pink Head Noodle Bar is known for its creative noodle dishes including ramen and Dan Dan. A must-visit for noodle lovers.", menu: "https://pinkhead.webflow.io" },
-            { name: "Namu", description: "Namu is a modern Korean restaurant offering a fusion of Korean and Swedish flavors. Located at Landbygatan 5, Malmö.", menu: "https://namu.nu" },
-            { name: "Zócalo", description: "Zócalo offers fresh Mexican cuisine inspired by the taquerias of San Francisco’s Mission District. Located at Södergatan 3, Malmö.", menu: "https://zocalo.restaurant/food/" },
-            { name: "Ubåtshallen", description: "Ubåtshallen cook based on the properties of the raw material and believe that the best results are achieved through well-applied technology Located at Lilla Varvsgatan 47, Malmö.", menu: "https://www.ubatshallen.se/" },
-            { name: "Quan", description: "Quan in the heart of Malmö offers a sophisticated twist on the traditional Asian kitchen of informal dining. Located at Mäster Johansgatan 15, Malmö.", menu: "https://quanbyquan.se/" },
-            { name: "Babusia", description: "Just a 5 minutes walk from Malmö Central station and right next to Malmö Saluhall, Babusia offers an authentic yet refined dining experience from breakfast to dinner, celebrating the rich traditions and the tasty flavors of Ukraine. Located at Citadellsvägen 5A, 211 18 Malmö.", menu: "https://babusia.se/en/menus/" },
-            { name: "Grekiska", description: "Where the grill is always ready to brighten your day with delicious Greek flavors! Located at Citadellsvägen 15, 211 18 Malmö", menu: "https://grekiska.se/restauranger/malmo-citadellen/" }
+            { name: "Thap Thim", description: "Traditional Thai cuisine with a focus on the spicy flavors of Isaan region in northeastern Thailand. Lunch set 160 kr. Seven spice levels available. Located on Västergatan 9, Malmö.", menu: "https://thapthim.se/meny", cuisines: ["thai", "asian"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-22", tue: "11-22", wed: "11-22", thu: "11-22", fri: "11-22", sat: "12-22", sun: "12-22"}, phone: "+46 40 12 21 13", distance: "0.3 km", mapsUrl: "https://maps.google.com/?q=Thap+Thim+Malmö" },
+            { name: "Surf Shack", description: "Known for its handcrafted smash burgers and fries. Multiple locations in Malmö including Västergatan and Beach Diner, offering a relaxed dining experience with customizable burgers.", menu: "https://www.surfshacksmashburgers.com/", cuisines: ["burger"], dietary: [], price: 2, hours: {mon: "11-19:30", tue: "11-19:30", wed: "11-19:30", thu: "11-19:30", fri: "11-20:30", sat: "11-20:30", sun: "12-19:30"}, phone: "+46 40 23 10 00", distance: "0.4 km", mapsUrl: "https://maps.google.com/?q=Surf+Shack+Malmö" },
+            { name: "Dockside Burgers", description: "Swedish, ecological, grass-fed beef burgers made fresh daily with a special blend of chuck, brisket, and beef shank. Lunch for 99 kr. Located at Dockplatsen in Västra Hamnen, Malmö.", menu: "https://malmo.docksideburgers.se/lunchmeny/", cuisines: ["burger", "swedish"], dietary: [], price: 1, hours: {mon: "11-14", tue: "11-14", wed: "11-14", thu: "11-14", fri: "11-14", sat: "closed", sun: "closed"}, phone: "+46 40 35 35 40", distance: "1.8 km", mapsUrl: "https://maps.google.com/?q=Dockside+Burgers+Västra+Hamnen+Malmö" },
+            { name: "Rosegarden", description: "An extensive Asian buffet featuring Chinese, Thai, sushi, salads, and more. Located at Stora Nygatan 59, Malmö.", menu: "https://rosegarden.se/locations/malmogrand", cuisines: ["asian"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-21", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 12 12 68", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Rosegarden+Malmö" },
+            { name: "Laziza", description: "Lebanese lunch buffet (135 kr) with hot and cold mezze, salads, dips, hummus, falafel, and hearty stews. Includes water, tea, and coffee. Located on Baltzarsgatan, Malmö.", menu: "https://www.laziza.se/lunch/", cuisines: ["lebanese"], dietary: ["vegetarian", "vegan", "halal"], price: 2, hours: {mon: "11-15", tue: "11-15", wed: "11-15", thu: "11-15", fri: "11-15", sat: "closed", sun: "closed"}, phone: "+46 40 12 95 95", distance: "0.5 km", mapsUrl: "https://maps.google.com/?q=Laziza+Malmö" },
+            { name: "COOP Sallad", description: "Offers fresh salads for a quick and healthy lunch in Malmö.", menu: "TBD", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 1, hours: {mon: "07-21", tue: "07-21", wed: "07-21", thu: "07-21", fri: "07-21", sat: "08-21", sun: "10-21"}, phone: null, distance: "0.2 km", mapsUrl: "https://maps.google.com/?q=COOP+Malmö+Central" },
+            { name: "Välfärden", description: "Scandinavian and international cuisine, offering a mix of meat, vegetarian, and vegan dishes. Located at Anckargripsgatan 3.", menu: "https://valfarden.nu/dagens-lunch/", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-14", tue: "11-14", wed: "11-14", thu: "11-14", fri: "11-14", sat: "closed", sun: "closed"}, phone: "+46 40 12 20 33", distance: "0.7 km", mapsUrl: "https://maps.google.com/?q=Välfärden+Malmö" },
+            { name: "Locali", description: "Fresh, healthy poké bowls and street food inspired by Southern California, Hawaii, and Asia. Located at Nordenskiöldsgatan 11, Malmö.", menu: "https://localifood.se/meny", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-20", tue: "11-20", wed: "11-20", thu: "11-20", fri: "11-20", sat: "12-20", sun: "12-19"}, phone: "+46 40 12 50 50", distance: "0.8 km", mapsUrl: "https://maps.google.com/?q=Locali+Malmö" },
+            { name: "Niagara", description: "Offers a wide range of lunch options from Swedish dishes to international cuisines. Located at Neptuniplan 1.", menu: "https://restaurangniagara.se/lunch/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-14", tue: "11-14", wed: "11-14", thu: "11-14", fri: "11-14", sat: "closed", sun: "closed"}, phone: "+46 40 12 03 10", distance: "1.2 km", mapsUrl: "https://maps.google.com/?q=Restaurang+Niagara+Malmö" },
+            { name: "Saluhallen", description: "An indoor food market with a variety of eateries offering gourmet food and casual dining. Located at Gibraltargatan 6, Malmö.", menu: "https://www.malmosaluhall.se", cuisines: ["asian", "swedish"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "10-19", tue: "10-19", wed: "10-19", thu: "10-19", fri: "10-20", sat: "10-18", sun: "11-17"}, phone: "+46 40 12 41 10", distance: "0.5 km", mapsUrl: "https://maps.google.com/?q=Malmö+Saluhall" },
+            { name: "Kolga", description: "Classic Swedish husmanskost (home-style cuisine) with daily specials, located at Hans Michelsensgatan 1, Malmö.", menu: "https://restaurangkolga.se/lunch/", cuisines: ["swedish"], dietary: [], price: 2, hours: {mon: "11-14", tue: "11-14", wed: "11-14", thu: "11-14", fri: "11-14", sat: "closed", sun: "closed"}, phone: "+46 40 611 52 30", distance: "0.9 km", mapsUrl: "https://maps.google.com/?q=Restaurang+Kolga+Malmö" },
+            { name: "Centralen", description: "Foodcourt located within Malmö Central Station.", menu: "TBD", cuisines: ["asian", "burger"], dietary: ["vegetarian"], price: 1, hours: {mon: "06-23", tue: "06-23", wed: "06-23", thu: "06-23", fri: "06-23", sat: "07-23", sun: "07-23"}, phone: null, distance: "0.1 km", mapsUrl: "https://maps.google.com/?q=Malmö+Central+Station" },
+            { name: "MENYn", description: "Grill and salad options like kebabs, gyros, and salads in Gamla Staden, Malmö.", menu: "https://restaurantguru.com/MENYn-Malmo", cuisines: ["greek"], dietary: ["vegetarian", "halal"], price: 1, hours: {mon: "10-21", tue: "10-21", wed: "10-21", thu: "10-21", fri: "10-22", sat: "10-22", sun: "11-21"}, phone: null, distance: "0.4 km", mapsUrl: "https://maps.google.com/?q=MENYn+Malmö" },
+            { name: "Mrs Saigon", description: "Cozy Vietnamese restaurant offering pho, spring rolls, and more. Located at Engelbrektsgatan 17, Malmö.", menu: "https://www.mrs-saigon.se/", cuisines: ["vietnamese", "asian"], dietary: ["vegetarian", "vegan", "halal"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-21", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 12 41 41", distance: "0.7 km", mapsUrl: "https://maps.google.com/?q=Mrs+Saigon+Malmö" },
+            { name: "Green Chili", description: "Indian restaurant offering tandoori, curry, and vegetarian dishes with a modern twist. Lunch special 129 kr (choose 2 dishes). Located at Lilla Torg 7, Malmö.", menu: "https://greenchili.se", cuisines: ["indian"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11:30-14:30", tue: "11:30-14:30", wed: "11:30-14:30", thu: "11:30-14:30", fri: "11:30-14:30", sat: "closed", sun: "closed"}, phone: "+46 40 307744", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Green+Chili+Malmö" },
+            { name: "Victors", description: "Classic lunch menu with Swedish favorites like schnitzel and Caesar salad. Located at Lilla Torg 1, Malmö.", menu: "https://www.victors.se/meny", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-22", tue: "11-22", wed: "11-22", thu: "11-23", fri: "11-01", sat: "11-01", sun: "11-22"}, phone: "+46 40 12 76 50", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Victors+Malmö" },
+            { name: "Max", description: "Swedish fast-food chain known for burgers, including vegetarian and vegan options. Located at Stortorget 25, Malmö.", menu: "https://www.max.se/maten/meny/", cuisines: ["burger", "swedish"], dietary: ["vegetarian", "vegan"], price: 1, hours: {mon: "10-22", tue: "10-22", wed: "10-22", thu: "10-22", fri: "10-23", sat: "10-23", sun: "10-22"}, phone: "+46 40 698 82 00", distance: "0.5 km", mapsUrl: "https://maps.google.com/?q=Max+Stortorget+Malmö" },
+            { name: "Spoonery", description: "Hearty soups, stews, and hotpots served with fresh, local ingredients. Multiple locations in Malmö.", menu: "https://spoonery.se", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11:30-21", tue: "11:30-21", wed: "11:30-21", thu: "11:30-21", fri: "11:30-21", sat: "11:30-21", sun: "11:30-21"}, phone: "+46 40 23 60 12", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Spoonery+Malmö" },
+            { name: "Slagthuset", description: "Slagthuset is a cozy restaurant located in Södra Hallen, Malmö, serving lunch every weekday from 11:30 to 13:30. They offer a daily meat, fish, or vegetarian dish, along with a salad bar, soup, bread, water, and coffee.", menu: "https://slagthuset.se/en/restaurant/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2, hours: {mon: "11:30-13:30", tue: "11:30-13:30", wed: "11:30-13:30", thu: "11:30-13:30", fri: "11:30-13:30", sat: "closed", sun: "closed"}, phone: "+46 40 12 25 20", distance: "1.5 km", mapsUrl: "https://maps.google.com/?q=Slagthuset+Malmö" },
+            { name: "Dirty Taco", description: "Dirty Taco offers fusion tacos with flavors from around the world, including vegan and meat options. Located at Södra Vallgatan 3, Malmö.", menu: "https://www.dirtytaco.se/meny", cuisines: ["mexican"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-22", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 23 50 50", distance: "0.8 km", mapsUrl: "https://maps.google.com/?q=Dirty+Taco+Malmö" },
+            { name: "Braseriet Sture 1912", description: "Brasserie Sture 1912 offers traditional Swedish dishes alongside international favorites like beef tartare, veal entrecôte, and oysters in an elegant setting. Located at Adelgatan 13, Malmö.", menu: "https://sture1912.com/en/", cuisines: ["swedish"], dietary: [], price: 3, hours: {mon: "11:30-14", tue: "11:30-14", wed: "11:30-14", thu: "11:30-14", fri: "11:30-14", sat: "closed", sun: "closed"}, phone: "+46 40 23 09 10", distance: "0.7 km", mapsUrl: "https://maps.google.com/?q=Brasserie+Sture+1912+Malmö" },
+            { name: "Östergatan No. 25", description: "Cozy Italian pizzeria with lunch buffet (119 kr) featuring hot pizzas, pasta, lasagna, and extensive salad bar. Located near Caroli Church in Malmö.", menu: "https://ostergatan25pizzeria.se", cuisines: ["italian"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-21", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 611 15 15", distance: "0.4 km", mapsUrl: "https://maps.google.com/?q=Östergatan+25+Pizzeria+Malmö" },
+            { name: "Pink Head Noodle Bar", description: "Known for handmade noodles and creative dishes including Japanese ramen, Tantanmen, Shoyu, and Chinese Dan Dan and Biang Biang Mian. A must-visit for noodle lovers.", menu: "https://pinkhead.se", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11:30-14", tue: "11:30-15", wed: "11:30-15", thu: "11:30-15", fri: "11:30-15", sat: "12-16", sun: "12-14:30"}, phone: "+46 40 30 50 50", distance: "0.5 km", mapsUrl: "https://maps.google.com/?q=Pink+Head+Noodle+Bar+Malmö" },
+            { name: "Namu", description: "Michelin Bib Gourmand awarded modern Korean restaurant offering a fusion of Korean and Swedish flavors with great value for quality. Located at Landbygatan 5, Malmö.", menu: "https://namu.nu", cuisines: ["korean", "asian"], dietary: ["vegetarian"], price: 3, hours: {mon: "closed", tue: "17-22", wed: "17-22", thu: "17-22", fri: "17-22", sat: "17-22", sun: "17-22"}, phone: "+46 40 23 03 30", distance: "0.9 km", mapsUrl: "https://maps.google.com/?q=Namu+Malmö" },
+            { name: "Zócalo", description: "Zócalo offers fresh Mexican cuisine inspired by the taquerias of San Francisco's Mission District. Located at Södergatan 3, Malmö.", menu: "https://zocalo.restaurant/food/", cuisines: ["mexican"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-22", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 12 22 80", distance: "0.3 km", mapsUrl: "https://maps.google.com/?q=Zócalo+Malmö" },
+            { name: "Ubåtshallen", description: "Ubåtshallen cook based on the properties of the raw material and believe that the best results are achieved through well-applied technology Located at Lilla Varvsgatan 47, Malmö.", menu: "https://www.ubatshallen.se/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 3, hours: {mon: "closed", tue: "17-23", wed: "17-23", thu: "17-23", fri: "17-23", sat: "17-23", sun: "closed"}, phone: "+46 40 12 80 40", distance: "1.9 km", mapsUrl: "https://maps.google.com/?q=Ubåtshallen+Malmö" },
+            { name: "Quan", description: "Quan in the heart of Malmö offers a sophisticated twist on the traditional Asian kitchen of informal dining. Located at Mäster Johansgatan 15, Malmö.", menu: "https://quanbyquan.se/", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-22", tue: "11-22", wed: "11-22", thu: "11-23", fri: "11-23", sat: "12-23", sun: "12-22"}, phone: "+46 40 23 25 25", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Quan+Malmö" },
+            { name: "Babusia", description: "Authentic Ukrainian restaurant offering refined dining experience from breakfast to dinner. Known for traditional borscht and varenyky dumplings. Located at Citadellsvägen 5A, next to Malmö Saluhall.", menu: "https://babusia.se/en/menus/", cuisines: ["ukrainian"], dietary: ["vegetarian"], price: 3, hours: {mon: "08-22", tue: "08-22", wed: "08-22", thu: "08-22", fri: "08-22", sat: "09-22", sun: "09-22"}, phone: "+46 768 757 151", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Babusia+Malmö" },
+            { name: "Grekiska", description: "Greek grill & bar serving classic Greek dishes such as souvlaki, gyros, moussaka and charcoal-grilled meats. Located at Citadellsvägen 15, Malmö.", menu: "https://grekiska.se/restauranger/malmo-citadellen/", cuisines: ["greek"], dietary: ["vegetarian", "halal"], price: 2, hours: {mon: "closed", tue: "11-21", wed: "11-21", thu: "11-21", fri: "11-22", sat: "12-22", sun: "12-19"}, phone: "+46 40 800 84", distance: "0.7 km", mapsUrl: "https://maps.google.com/?q=Grekiska+Malmö" }
         ];
 
+        // ====== STATE MANAGEMENT ======
         let activeRestaurants = [...restaurants];
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        let visitHistory = JSON.parse(localStorage.getItem('visitHistory') || '[]');
+        let savedPreferences = JSON.parse(localStorage.getItem('filterPreferences') || '{}');
+        let selectedRestaurants = new Set(savedPreferences.selectedRestaurants || restaurants.map(r => r.name));
+        let selectedCuisines = new Set(savedPreferences.selectedCuisines || []);
+        let selectedDietary = new Set(savedPreferences.selectedDietary || []);
+        let selectedPrices = new Set(savedPreferences.selectedPrices || [1, 2, 3]);
+        let excludeRecent = savedPreferences.excludeRecent || false;
+        let showOpenNow = savedPreferences.showOpenNow || false;
+        let searchQuery = '';
+        let spinning = false;
+        let currentRestaurant = null;
 
+        const funMessages = [
+            "Time to eat at...",
+            "Your lunch adventure awaits at...",
+            "Heading to...",
+            "Let's try...",
+            "Lunch decision made!",
+            "Your taste buds chose...",
+            "Food time at...",
+            "Bon appétit at..."
+        ];
+
+        // ====== DOM ELEMENTS ======
         const carousel = document.getElementById('carousel');
-        const restaurantSelect = document.getElementById('restaurant-select');
-        
+        const arrow = document.getElementById('arrow');
         const spinButton = document.getElementById('spinButton');
+        const quickPickButton = document.getElementById('quickPickButton');
         const resetButton = document.getElementById('resetButton');
         const infoModal = document.getElementById('info-modal');
-        const infoTitle = document.getElementById('modal-title');
-        const infoDescription = document.getElementById('modal-description');
-        const infoLink = document.getElementById('modal-link');
-        const closeInfo = document.getElementById('close-info');
         const toast = document.getElementById('toast');
 
-        // Populate multi-select with restaurant options
-        function populateSelectBox() {
-            restaurantSelect.innerHTML = '';
-            restaurants.forEach((restaurant) => {
-                const option = document.createElement('option');
-                option.value = restaurant.name;
-                option.innerText = restaurant.name;
-                option.selected = true;
-                restaurantSelect.appendChild(option);
+        // ====== UTILITY FUNCTIONS ======
+        function saveFavorites() {
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+        }
+
+        function saveHistory() {
+            localStorage.setItem('visitHistory', JSON.stringify(visitHistory));
+        }
+
+        function saveFilterPreferences() {
+            const prefs = {
+                selectedRestaurants: Array.from(selectedRestaurants),
+                selectedCuisines: Array.from(selectedCuisines),
+                selectedDietary: Array.from(selectedDietary),
+                selectedPrices: Array.from(selectedPrices),
+                excludeRecent: excludeRecent,
+                showOpenNow: showOpenNow
+            };
+            localStorage.setItem('filterPreferences', JSON.stringify(prefs));
+        }
+
+        function isRestaurantOpen(restaurant) {
+            if (!restaurant.hours) return true; // Assume open if no hours data
+
+            const now = new Date();
+            const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const dayKey = dayNames[now.getDay()];
+            const hours = restaurant.hours[dayKey];
+
+            if (!hours || hours === 'closed') return false;
+
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            const [openTime, closeTime] = hours.split('-');
+
+            const [openHour, openMin = 0] = openTime.split(':').map(Number);
+            const [closeHour, closeMin = 0] = closeTime.split(':').map(Number);
+
+            const openMinutes = openHour * 60 + openMin;
+            let closeMinutes = closeHour * 60 + closeMin;
+
+            // Handle times past midnight (like "11-01" for 11am to 1am)
+            if (closeMinutes < openMinutes) {
+                closeMinutes += 24 * 60;
+            }
+
+            return currentTime >= openMinutes && currentTime <= closeMinutes;
+        }
+
+        function triggerConfetti() {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
             });
         }
 
-        // Create items for the carousel
+        function showSelectionMessage(restaurantName) {
+            const message = funMessages[Math.floor(Math.random() * funMessages.length)];
+            const messageEl = document.getElementById('selection-message');
+            messageEl.textContent = `${message} ${restaurantName}!`;
+            setTimeout(() => {
+                messageEl.textContent = '';
+            }, 5000);
+        }
+
+        function addToHistory(restaurant) {
+            const visit = {
+                name: restaurant.name,
+                date: new Date().toISOString()
+            };
+            // Keep all visits to properly track visit counts
+            visitHistory = [visit, ...visitHistory].slice(0, 50); // Increased from 20 to 50 for better tracking
+            saveHistory();
+            updateHistoryDisplay();
+            updateStats();
+        }
+
+        function getVisitCount(restaurantName) {
+            return visitHistory.filter(v => v.name === restaurantName).length;
+        }
+
+        function isFavorite(restaurantName) {
+            return favorites.includes(restaurantName);
+        }
+
+        function toggleFavorite(restaurantName) {
+            if (isFavorite(restaurantName)) {
+                favorites = favorites.filter(f => f !== restaurantName);
+            } else {
+                favorites.push(restaurantName);
+            }
+            saveFavorites();
+            updateStats();
+        }
+
+        function getRecentVisits() {
+            // Get unique restaurant names from the last 5 visits
+            const recentNames = [];
+            for (const visit of visitHistory) {
+                if (!recentNames.includes(visit.name)) {
+                    recentNames.push(visit.name);
+                }
+                if (recentNames.length >= 5) break;
+            }
+            return recentNames;
+        }
+
+        function getPriceSymbol(price) {
+            return '€'.repeat(price);
+        }
+
+        // ====== FILTERING LOGIC ======
+        function applyFilters() {
+            activeRestaurants = restaurants.filter(restaurant => {
+                // Restaurant selection filter (manual selection/deselection)
+                if (!selectedRestaurants.has(restaurant.name)) {
+                    return false;
+                }
+
+                // Search filter
+                if (searchQuery && !restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+                    return false;
+                }
+
+                // Cuisine filter
+                if (selectedCuisines.size > 0) {
+                    const hasCuisine = restaurant.cuisines.some(c => selectedCuisines.has(c));
+                    if (!hasCuisine) return false;
+                }
+
+                // Dietary filter
+                if (selectedDietary.size > 0) {
+                    const hasDietary = restaurant.dietary.some(d => selectedDietary.has(d));
+                    if (!hasDietary) return false;
+                }
+
+                // Price filter
+                if (!selectedPrices.has(restaurant.price)) {
+                    return false;
+                }
+
+                // Open now filter
+                if (showOpenNow && !isRestaurantOpen(restaurant)) {
+                    return false;
+                }
+
+                // Recent visits filter
+                if (excludeRecent && getRecentVisits().includes(restaurant.name)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Reset carousel
+            carousel.innerHTML = '';
+            if (activeRestaurants.length > 0) {
+                duplicateItems(3);
+            }
+            updateStats();
+            saveFilterPreferences();
+        }
+
+        // ====== UI UPDATE FUNCTIONS ======
+        function updateStats() {
+            document.getElementById('available-count').textContent = activeRestaurants.length;
+            document.getElementById('favorites-count').textContent = favorites.length;
+            document.getElementById('visits-count').textContent = visitHistory.length;
+        }
+
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+
+            const recent = visitHistory.slice(0, 5);
+            recent.forEach(visit => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <span class="name">${visit.name}</span>
+                    <span class="date">${new Date(visit.date).toLocaleDateString()}</span>
+                `;
+                historyList.appendChild(item);
+            });
+        }
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ====== CAROUSEL RENDERING ======
         function renderCarousel() {
             activeRestaurants.forEach((restaurant) => {
                 const item = document.createElement('div');
                 item.className = 'carousel-item';
-                item.innerText = restaurant.name;
+
+                let content = restaurant.name;
+                if (isFavorite(restaurant.name)) {
+                    content = `★ ${content}`;
+                }
+
+                const visitCount = getVisitCount(restaurant.name);
+                if (visitCount > 0) {
+                    content += ` (${visitCount})`;
+                }
+
+                item.textContent = content;
                 item.addEventListener('click', () => showInfo(restaurant));
                 carousel.appendChild(item);
             });
         }
 
-        // Show restaurant info in modal
-        function showInfo(restaurant) {
-            infoTitle.innerText = restaurant.name;
-            infoDescription.innerText = restaurant.description;
-            infoLink.href = restaurant.menu;
-            infoModal.style.display = 'block';
-        }
-
-        // Hide info modal
-        closeInfo.addEventListener('click', function() {
-            infoModal.style.display = 'none';
-        });
-
-        // Handle selection change in multi-select
-        restaurantSelect.addEventListener('change', function() {
-            const selectedOptions = Array.from(restaurantSelect.selectedOptions).map(option => option.value);
-            activeRestaurants = restaurants.filter(r => selectedOptions.includes(r.name));
-            carousel.innerHTML = '';
-            duplicateItems(3);
-        });
-
-        // Pre-calculate how many duplicates of the list are needed
         function duplicateItems(minSpins) {
             const totalItems = activeRestaurants.length * minSpins + activeRestaurants.length;
-            const duplicateCount = Math.ceil(totalItems / activeRestaurants.length);  // How many times to repeat
+            const duplicateCount = Math.ceil(totalItems / activeRestaurants.length);
             for (let i = 0; i < duplicateCount; i++) {
                 renderCarousel();
             }
         }
 
-        // Initial rendering
-        populateSelectBox();
-        duplicateItems(3);  // Render enough items for a minimum of 3 full spins
+        // ====== MODAL FUNCTIONS ======
+        function showInfo(restaurant) {
+            currentRestaurant = restaurant;
+            document.getElementById('modal-title').textContent = restaurant.name;
+            document.getElementById('modal-description').textContent = restaurant.description;
+            document.getElementById('modal-link').href = restaurant.menu;
+            document.getElementById('modal-price').textContent = getPriceSymbol(restaurant.price);
+            document.getElementById('modal-visits').textContent = getVisitCount(restaurant.name);
 
-        let spinning = false;
+            // Distance
+            document.getElementById('modal-distance').textContent = restaurant.distance || '-';
 
-        const arrow = document.getElementById('arrow');
-
-        spinButton.addEventListener('click', function() {
-            if (!spinning) {
-                spinning = true;
-
-                // Add animation to arrow
-                arrow.classList.add('spin');
-
-                // Hide Spin button and reset Reset button
-                spinButton.style.display = "none";
-                resetButton.style.display = "none";
-
-                // Calculate a minimum of 3 full rounds plus the random restaurant
-                const minSpins = 3;
-                const randomIndex = Math.floor(Math.random() * activeRestaurants.length);
-                const totalSpins = (minSpins * activeRestaurants.length) + randomIndex;
-
-                // Calculate the item height and center adjustment based on arrow position
-                const itemHeight = 50;  // Fixed height per item
-                const arrowPositionCorrection = (carouselContainer.offsetHeight / 2) - (itemHeight / 2);
-
-                // Offset calculated to align selected option with the arrow tip
-                const offset = -((totalSpins * itemHeight) - arrowPositionCorrection); 
-                carousel.style.transition = 'transform 5s ease-out';
-                carousel.style.transform = `translateY(${offset}px)`;
-
-                setTimeout(() => {
-                    const selectedRestaurant = activeRestaurants[randomIndex];
-                    const toast = document.getElementById('toast');
-                    toast.innerText = `Selected Restaurant: ${selectedRestaurant.name}`;
-                    toast.className = "show";
-                    setTimeout(() => {
-                        toast.className = toast.className.replace("show", "");
-                    }, 3000);
-
-                    // Remove arrow animation
-                    arrow.classList.remove('spin');
-                    spinning = false;
-
-                    // Show Reset button after the spin
-                    resetButton.style.display = "block";
-                }, 5000); // Delay based on the longer spin time
-            }
-        });
-
-        // Toggle the visibility of the options
-        document.getElementById('toggle-options').addEventListener('click', function() {
-            const options = document.getElementById('options');
-            if (options.style.display === 'none' || options.style.display === '') {
-                options.style.display = 'block';
-                this.innerText = 'Hide Options';
+            // Hours today
+            if (restaurant.hours) {
+                const now = new Date();
+                const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                const dayKey = dayNames[now.getDay()];
+                const hours = restaurant.hours[dayKey];
+                const hoursText = hours === 'closed' ? 'Closed' : hours || '-';
+                const isOpen = isRestaurantOpen(restaurant);
+                document.getElementById('modal-hours').textContent = hoursText;
+                document.getElementById('modal-hours').style.color = isOpen ? 'var(--success-color)' : 'var(--text-dark)';
             } else {
-                options.style.display = 'none';
-                this.innerText = 'Show Options';
+                document.getElementById('modal-hours').textContent = '-';
+                document.getElementById('modal-hours').style.color = 'var(--text-dark)';
+            }
+
+            // Phone
+            document.getElementById('modal-phone').textContent = restaurant.phone || '-';
+
+            // Maps link
+            if (restaurant.mapsUrl) {
+                document.getElementById('modal-maps-link').href = restaurant.mapsUrl;
+                document.getElementById('modal-maps-link').style.display = '';
+            } else {
+                document.getElementById('modal-maps-link').style.display = 'none';
+            }
+
+            // Tags
+            const tagsContainer = document.getElementById('modal-tags');
+            tagsContainer.innerHTML = '';
+            restaurant.cuisines.forEach(cuisine => {
+                const tag = document.createElement('span');
+                tag.className = `cuisine-tag ${cuisine}`;
+                tag.textContent = cuisine;
+                tagsContainer.appendChild(tag);
+            });
+            restaurant.dietary.forEach(diet => {
+                const tag = document.createElement('span');
+                tag.className = 'cuisine-tag dietary';
+                tag.textContent = diet;
+                tagsContainer.appendChild(tag);
+            });
+
+            // Favorite button
+            const favoriteBtn = document.getElementById('favorite-btn');
+            if (isFavorite(restaurant.name)) {
+                favoriteBtn.textContent = '★ Favorited';
+                favoriteBtn.classList.add('favorited');
+            } else {
+                favoriteBtn.textContent = '☆ Favorite';
+                favoriteBtn.classList.remove('favorited');
+            }
+
+            infoModal.style.display = 'block';
+        }
+
+        // ====== SPIN FUNCTIONS ======
+        function performSpin(duration = 5000) {
+            if (activeRestaurants.length === 0) {
+                showToast('No restaurants match your filters!');
+                return;
+            }
+
+            spinning = true;
+            arrow.classList.add('spin');
+            spinButton.style.display = "none";
+            quickPickButton.style.display = "none";
+            resetButton.style.display = "none";
+
+            const minSpins = 3;
+            const randomIndex = Math.floor(Math.random() * activeRestaurants.length);
+            const totalSpins = (minSpins * activeRestaurants.length) + randomIndex;
+            const itemHeight = 50;
+            const carouselContainer = document.getElementById('carouselContainer');
+            const arrowPositionCorrection = (carouselContainer.offsetHeight / 2) - (itemHeight / 2);
+            const offset = -((totalSpins * itemHeight) - arrowPositionCorrection);
+
+            carousel.style.transition = `transform ${duration}ms ease-out`;
+            carousel.style.transform = `translateY(${offset}px)`;
+
+            setTimeout(() => {
+                const selectedRestaurant = activeRestaurants[randomIndex];
+                addToHistory(selectedRestaurant);
+                showToast(`Selected: ${selectedRestaurant.name}`);
+                showSelectionMessage(selectedRestaurant.name);
+                triggerConfetti();
+                arrow.classList.remove('spin');
+                spinning = false;
+                resetButton.style.display = "block";
+            }, duration);
+        }
+
+        // ====== FILTER INITIALIZATION ======
+        function initializeFilters() {
+            // Get unique cuisines and dietary options
+            const allCuisines = new Set();
+            const allDietary = new Set();
+
+            restaurants.forEach(r => {
+                r.cuisines.forEach(c => allCuisines.add(c));
+                r.dietary.forEach(d => allDietary.add(d));
+            });
+
+            // Restaurant selection checkboxes
+            const restaurantSelection = document.getElementById('restaurant-selection');
+            restaurants.forEach(restaurant => {
+                const div = document.createElement('div');
+                div.className = 'restaurant-checkbox';
+                const checkboxId = `restaurant-${restaurant.name.replace(/\s+/g, '-')}`;
+                div.innerHTML = `
+                    <input type="checkbox" id="${checkboxId}" value="${restaurant.name}" class="restaurant-filter" checked>
+                    <label for="${checkboxId}">${restaurant.name}</label>
+                `;
+                restaurantSelection.appendChild(div);
+            });
+
+            // Cuisine filters
+            const cuisineFilters = document.getElementById('cuisine-filters');
+            [...allCuisines].sort().forEach(cuisine => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-label';
+                label.innerHTML = `
+                    <input type="checkbox" value="${cuisine}" class="cuisine-filter">
+                    <span>${cuisine.charAt(0).toUpperCase() + cuisine.slice(1)}</span>
+                `;
+                cuisineFilters.appendChild(label);
+            });
+
+            // Dietary filters
+            const dietaryFilters = document.getElementById('dietary-filters');
+            [...allDietary].sort().forEach(dietary => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-label';
+                label.innerHTML = `
+                    <input type="checkbox" value="${dietary}" class="dietary-filter">
+                    <span>${dietary.charAt(0).toUpperCase() + dietary.slice(1)}</span>
+                `;
+                dietaryFilters.appendChild(label);
+            });
+        }
+
+        function restoreSavedPreferences() {
+            // Restore restaurant selections
+            document.querySelectorAll('.restaurant-filter').forEach(checkbox => {
+                checkbox.checked = selectedRestaurants.has(checkbox.value);
+            });
+
+            // Restore cuisine filters
+            document.querySelectorAll('.cuisine-filter').forEach(checkbox => {
+                checkbox.checked = selectedCuisines.has(checkbox.value);
+            });
+
+            // Restore dietary filters
+            document.querySelectorAll('.dietary-filter').forEach(checkbox => {
+                checkbox.checked = selectedDietary.has(checkbox.value);
+            });
+
+            // Restore price filters
+            document.querySelectorAll('.price-option').forEach(option => {
+                const price = parseInt(option.dataset.price);
+                if (selectedPrices.has(price)) {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+
+            // Restore exclude recent
+            document.getElementById('exclude-recent').checked = excludeRecent;
+
+            // Restore show open now
+            document.getElementById('show-open-now').checked = showOpenNow;
+        }
+
+        // ====== EVENT LISTENERS ======
+        document.getElementById('spinButton').addEventListener('click', () => performSpin(5000));
+        document.getElementById('quickPickButton').addEventListener('click', () => performSpin(100));
+
+        document.getElementById('resetButton').addEventListener('click', function() {
+            carousel.style.transition = 'none';
+            carousel.style.transform = 'translateY(0)';
+            resetButton.style.display = "none";
+            spinButton.style.display = "block";
+            quickPickButton.style.display = "block";
+        });
+
+        // Search
+        document.getElementById('search-box').addEventListener('input', function(e) {
+            searchQuery = e.target.value;
+            applyFilters();
+        });
+
+        // Restaurant selection
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('restaurant-filter')) {
+                if (e.target.checked) {
+                    selectedRestaurants.add(e.target.value);
+                } else {
+                    selectedRestaurants.delete(e.target.value);
+                }
+                applyFilters();
             }
         });
 
-        resetButton.addEventListener('click', function() {
-            // Reset Logic
-            carousel.style.transition = 'none';  // Remove transition for reset
-            carousel.style.transform = 'translateY(0)';  // Reset position
-            resetButton.style.display = "none";  // Hide Reset button
-            spinButton.style.display = "block";  // Show Spin button
+        // Cuisine filters
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('cuisine-filter')) {
+                if (e.target.checked) {
+                    selectedCuisines.add(e.target.value);
+                } else {
+                    selectedCuisines.delete(e.target.value);
+                }
+                applyFilters();
+            }
         });
+
+        // Dietary filters
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('dietary-filter')) {
+                if (e.target.checked) {
+                    selectedDietary.add(e.target.value);
+                } else {
+                    selectedDietary.delete(e.target.value);
+                }
+                applyFilters();
+            }
+        });
+
+        // Price filters
+        document.querySelectorAll('.price-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const price = parseInt(this.dataset.price);
+                if (this.classList.contains('active')) {
+                    this.classList.remove('active');
+                    selectedPrices.delete(price);
+                } else {
+                    this.classList.add('active');
+                    selectedPrices.add(price);
+                }
+                applyFilters();
+            });
+        });
+
+        // Exclude recent
+        document.getElementById('exclude-recent').addEventListener('change', function(e) {
+            excludeRecent = e.target.checked;
+            applyFilters();
+        });
+
+        // Show only open now
+        document.getElementById('show-open-now').addEventListener('change', function(e) {
+            showOpenNow = e.target.checked;
+            applyFilters();
+        });
+
+        // Feeling Lucky button - excludes last 10 visits and spins
+        document.getElementById('luckyButton').addEventListener('click', function() {
+            if (activeRestaurants.length === 0) {
+                showToast('No restaurants match your filters!');
+                return;
+            }
+
+            // Temporarily exclude last 10 visits
+            const last10Visits = [];
+            for (const visit of visitHistory) {
+                if (!last10Visits.includes(visit.name)) {
+                    last10Visits.push(visit.name);
+                }
+                if (last10Visits.length >= 10) break;
+            }
+
+            // Filter out last 10 visits
+            const luckyRestaurants = activeRestaurants.filter(r => !last10Visits.includes(r.name));
+
+            if (luckyRestaurants.length === 0) {
+                showToast('All restaurants have been visited recently! Try clearing history or adjusting filters.');
+                return;
+            }
+
+            // Pick random restaurant from lucky pool
+            const randomRestaurant = luckyRestaurants[Math.floor(Math.random() * luckyRestaurants.length)];
+            addToHistory(randomRestaurant);
+            showToast(`Feeling lucky? Selected: ${randomRestaurant.name}`);
+            showSelectionMessage(randomRestaurant.name);
+            triggerConfetti();
+            showInfo(randomRestaurant);
+        });
+
+        // Quick actions
+        document.getElementById('select-all').addEventListener('click', function() {
+            // Reset all filters
+            document.querySelectorAll('.cuisine-filter, .dietary-filter').forEach(cb => {
+                cb.checked = false;
+            });
+            document.querySelectorAll('.restaurant-filter').forEach(cb => {
+                cb.checked = true;
+            });
+            selectedCuisines.clear();
+            selectedDietary.clear();
+            selectedRestaurants = new Set(restaurants.map(r => r.name));
+            selectedPrices = new Set([1, 2, 3]);
+            document.querySelectorAll('.price-option').forEach(opt => opt.classList.add('active'));
+            applyFilters();
+        });
+
+        document.getElementById('deselect-all').addEventListener('click', function() {
+            // Deselect all restaurants
+            document.querySelectorAll('.restaurant-filter').forEach(cb => {
+                cb.checked = false;
+            });
+            selectedRestaurants.clear();
+            applyFilters();
+        });
+
+        document.getElementById('clear-history').addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all visit history?')) {
+                visitHistory = [];
+                saveHistory();
+                updateHistoryDisplay();
+                updateStats();
+                showToast('History cleared!');
+            }
+        });
+
+        // Modal
+        document.getElementById('close-info').addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+
+        document.getElementById('favorite-btn').addEventListener('click', function() {
+            if (currentRestaurant) {
+                toggleFavorite(currentRestaurant.name);
+                showInfo(currentRestaurant);
+                applyFilters();
+                showToast(isFavorite(currentRestaurant.name) ? 'Added to favorites!' : 'Removed from favorites!');
+            }
+        });
+
+        // Close modal on background click
+        infoModal.addEventListener('click', function(e) {
+            if (e.target === infoModal) {
+                infoModal.style.display = 'none';
+            }
+        });
+
+        // Keyboard accessibility for modal (Escape key)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (infoModal.style.display === 'block') {
+                    infoModal.style.display = 'none';
+                }
+                if (sidebar.classList.contains('visible')) {
+                    closeFilters();
+                }
+            }
+        });
+
+        // Toggle filters sidebar
+        const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
+        const closeFiltersBtn = document.getElementById('close-filters-btn');
+        const sidebar = document.querySelector('.filters-sidebar');
+        const backdrop = document.getElementById('filters-backdrop');
+
+        function openFilters() {
+            sidebar.classList.add('visible');
+            backdrop.classList.add('visible');
+            toggleFiltersBtn.textContent = '✕';
+        }
+
+        function closeFilters() {
+            sidebar.classList.remove('visible');
+            backdrop.classList.remove('visible');
+            toggleFiltersBtn.textContent = '☰';
+        }
+
+        toggleFiltersBtn.addEventListener('click', function() {
+            const isVisible = sidebar.classList.contains('visible');
+            if (isVisible) {
+                closeFilters();
+            } else {
+                openFilters();
+            }
+        });
+
+        closeFiltersBtn.addEventListener('click', function() {
+            closeFilters();
+        });
+
+        // Click on available count to toggle filters
+        document.getElementById('available-stat').addEventListener('click', function() {
+            const isVisible = sidebar.classList.contains('visible');
+            if (isVisible) {
+                closeFilters();
+            } else {
+                openFilters();
+            }
+        });
+
+        // Keyboard support for available stat button
+        document.getElementById('available-stat').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const isVisible = sidebar.classList.contains('visible');
+                if (isVisible) {
+                    closeFilters();
+                } else {
+                    openFilters();
+                }
+            }
+        });
+
+        // Click backdrop to close filters
+        backdrop.addEventListener('click', function() {
+            closeFilters();
+        });
+
+        // ====== INITIALIZATION ======
+        initializeFilters();
+        restoreSavedPreferences();
+        applyFilters();
+        updateStats();
+        updateHistoryDisplay();
     </script>
 
 </body>
