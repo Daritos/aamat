@@ -83,16 +83,54 @@
                 text-align: center;
             }
 
+            .stat-item.clickable {
+                cursor: pointer;
+                transition: all 0.3s;
+                padding: 10px;
+                border-radius: 8px;
+            }
+
+            .stat-item.clickable:hover {
+                background-color: rgba(0, 190, 172, 0.1);
+                transform: translateY(-2px);
+            }
+
+            .stat-item.clickable:active {
+                transform: translateY(0);
+            }
+
             .stat-value {
                 font-size: 1.5em;
                 font-weight: bold;
                 color: var(--primary-color);
             }
 
+            .stat-item.clickable .stat-value {
+                position: relative;
+            }
+
+            .stat-item.clickable .stat-value::after {
+                content: '⚙️';
+                font-size: 0.6em;
+                position: absolute;
+                top: -5px;
+                right: -15px;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            .stat-item.clickable:hover .stat-value::after {
+                opacity: 1;
+            }
+
             .stat-label {
                 font-size: 0.85em;
                 color: var(--text-light);
                 margin-top: 5px;
+            }
+
+            .stat-item.clickable .stat-label {
+                font-weight: 600;
             }
 
             /* For smaller screens, reduce padding and font sizes */
@@ -701,7 +739,7 @@
             <div class="spinner-section">
                 <!-- Statistics Bar -->
                 <div class="stats-bar">
-                    <div class="stat-item">
+                    <div class="stat-item clickable" id="available-stat" title="Click to toggle filters">
                         <div class="stat-value" id="available-count">0</div>
                         <div class="stat-label">Available</div>
                     </div>
@@ -1273,12 +1311,32 @@
             closeFilters();
         });
 
+        // Click on available count to toggle filters
+        document.getElementById('available-stat').addEventListener('click', function() {
+            const isVisible = sidebar.classList.contains('visible');
+
+            // On desktop (>1024px), sidebar is always visible, so we scroll to it
+            if (window.innerWidth > 1024) {
+                sidebar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                // On mobile/tablet, toggle the sidebar
+                if (isVisible) {
+                    closeFilters();
+                } else {
+                    openFilters();
+                }
+            }
+        });
+
         // Close filters on mobile when clicking outside
         document.addEventListener('click', function(e) {
+            const availableStat = document.getElementById('available-stat');
+
             if (window.innerWidth <= 1024 &&
                 sidebar.classList.contains('visible') &&
                 !sidebar.contains(e.target) &&
-                e.target !== toggleFiltersBtn) {
+                e.target !== toggleFiltersBtn &&
+                !availableStat.contains(e.target)) {
                 closeFilters();
             }
         });
