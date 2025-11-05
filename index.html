@@ -63,10 +63,8 @@
             }
 
             .main-content {
-                display: grid;
-                grid-template-columns: 1fr 350px;
-                gap: 20px;
-                align-items: start;
+                display: block;
+                position: relative;
             }
 
             /* Center Spinner Section */
@@ -76,6 +74,8 @@
                 padding: 30px;
                 box-shadow: var(--shadow);
                 border: 1px solid var(--border-color);
+                margin: 0 auto;
+                max-width: 800px;
             }
 
             .stats-bar {
@@ -143,21 +143,7 @@
                 font-weight: 600;
             }
 
-            /* For smaller screens, reduce padding and font sizes */
-            @media (max-width: 1024px) {
-                .main-content {
-                    grid-template-columns: 1fr;
-                }
-
-                .filters-sidebar {
-                    order: 2;
-                }
-
-                .spinner-section {
-                    order: 1;
-                }
-            }
-
+            /* Responsive adjustments */
             @media (max-width: 600px) {
                 header h1 {
                     font-size: 1.8em;
@@ -185,6 +171,11 @@
 
                 .button-group button {
                     width: 100%;
+                }
+
+                .filters-sidebar {
+                    width: 100%;
+                    max-width: 100%;
                 }
             }
 
@@ -373,11 +364,22 @@
                 background: var(--card-bg);
                 border-radius: 8px;
                 padding: 25px;
-                box-shadow: var(--shadow);
+                box-shadow: 0 0 20px rgba(0,0,0,0.2);
                 border: 1px solid var(--border-color);
-                max-height: 800px;
+                max-height: 90vh;
                 overflow-y: auto;
-                position: relative;
+                position: fixed;
+                top: 50%;
+                right: 20px;
+                transform: translateY(-50%);
+                width: 90%;
+                max-width: 400px;
+                z-index: 998;
+                display: none;
+            }
+
+            .filters-sidebar.visible {
+                display: block;
             }
 
             .filters-sidebar h2 {
@@ -403,7 +405,7 @@
                 padding: 0;
                 width: 30px;
                 height: 30px;
-                display: none;
+                display: flex;
                 align-items: center;
                 justify-content: center;
                 border-radius: 5px;
@@ -413,12 +415,6 @@
             .close-filters-btn:hover {
                 background-color: #f0f0f0;
                 color: var(--text-dark);
-            }
-
-            @media (max-width: 1024px) {
-                .close-filters-btn {
-                    display: flex;
-                }
             }
 
             .filter-section {
@@ -549,35 +545,35 @@
                 box-shadow: 0 6px 16px rgba(0,0,0,0.3);
             }
 
-            .filters-sidebar.hidden {
-                display: none;
-            }
-
-            /* Desktop view - hide toggle button */
-            @media (min-width: 1025px) {
-                .toggle-filters-btn {
-                    display: none;
-                }
-            }
-
-            @media (max-width: 1024px) {
+            /* Mobile specific adjustments */
+            @media (max-width: 600px) {
                 .filters-sidebar {
-                    position: fixed;
-                    top: 0;
                     right: 0;
-                    bottom: 0;
-                    width: 90%;
-                    max-width: 400px;
-                    z-index: 998;
-                    max-height: 100vh;
-                    display: none;
+                    left: 0;
+                    width: 100%;
+                    max-width: 100%;
                     border-radius: 0;
-                    border-right: none;
+                    top: 0;
+                    bottom: 0;
+                    transform: none;
+                    max-height: 100vh;
                 }
+            }
 
-                .filters-sidebar.visible {
-                    display: block;
-                }
+            /* Backdrop overlay */
+            .filters-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 997;
+            }
+
+            .filters-backdrop.visible {
+                display: block;
             }
 
             /* Toast Notification */
@@ -859,6 +855,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Backdrop -->
+    <div class="filters-backdrop" id="filters-backdrop"></div>
 
     <!-- Toggle Filters Button -->
     <button class="toggle-filters-btn" id="toggle-filters-btn" aria-label="Toggle filters">
@@ -1321,14 +1320,17 @@
         const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
         const closeFiltersBtn = document.getElementById('close-filters-btn');
         const sidebar = document.querySelector('.filters-sidebar');
+        const backdrop = document.getElementById('filters-backdrop');
 
         function openFilters() {
             sidebar.classList.add('visible');
+            backdrop.classList.add('visible');
             toggleFiltersBtn.textContent = '✕';
         }
 
         function closeFilters() {
             sidebar.classList.remove('visible');
+            backdrop.classList.remove('visible');
             toggleFiltersBtn.textContent = '☰';
         }
 
@@ -1348,31 +1350,16 @@
         // Click on available count to toggle filters
         document.getElementById('available-stat').addEventListener('click', function() {
             const isVisible = sidebar.classList.contains('visible');
-
-            // On desktop (>1024px), sidebar is always visible, so we scroll to it
-            if (window.innerWidth > 1024) {
-                sidebar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (isVisible) {
+                closeFilters();
             } else {
-                // On mobile/tablet, toggle the sidebar
-                if (isVisible) {
-                    closeFilters();
-                } else {
-                    openFilters();
-                }
+                openFilters();
             }
         });
 
-        // Close filters on mobile when clicking outside
-        document.addEventListener('click', function(e) {
-            const availableStat = document.getElementById('available-stat');
-
-            if (window.innerWidth <= 1024 &&
-                sidebar.classList.contains('visible') &&
-                !sidebar.contains(e.target) &&
-                e.target !== toggleFiltersBtn &&
-                !availableStat.contains(e.target)) {
-                closeFilters();
-            }
+        // Click backdrop to close filters
+        backdrop.addEventListener('click', function() {
+            closeFilters();
         });
 
         // ====== INITIALIZATION ======
