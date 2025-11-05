@@ -1008,7 +1008,8 @@
                 name: restaurant.name,
                 date: new Date().toISOString()
             };
-            visitHistory = [visit, ...visitHistory.filter(v => v.name !== restaurant.name)].slice(0, 20);
+            // Keep all visits to properly track visit counts
+            visitHistory = [visit, ...visitHistory].slice(0, 50); // Increased from 20 to 50 for better tracking
             saveHistory();
             updateHistoryDisplay();
             updateStats();
@@ -1033,7 +1034,15 @@
         }
 
         function getRecentVisits() {
-            return visitHistory.slice(0, 5).map(v => v.name);
+            // Get unique restaurant names from the last 5 visits
+            const recentNames = [];
+            for (const visit of visitHistory) {
+                if (!recentNames.includes(visit.name)) {
+                    recentNames.push(visit.name);
+                }
+                if (recentNames.length >= 5) break;
+            }
+            return recentNames;
         }
 
         function getPriceSymbol(price) {
