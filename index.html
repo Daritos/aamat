@@ -325,12 +325,47 @@
                 box-shadow: 0 10px 30px rgba(0,0,0,0.2);
                 max-height: 800px;
                 overflow-y: auto;
+                position: relative;
             }
 
             .filters-sidebar h2 {
                 margin-bottom: 20px;
                 color: var(--primary-color);
                 font-size: 1.5em;
+            }
+
+            .filters-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+
+            .close-filters-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                color: var(--text-light);
+                cursor: pointer;
+                padding: 0;
+                width: 30px;
+                height: 30px;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                border-radius: 5px;
+                transition: all 0.3s;
+            }
+
+            .close-filters-btn:hover {
+                background-color: #f0f0f0;
+                color: var(--text-dark);
+            }
+
+            @media (max-width: 1024px) {
+                .close-filters-btn {
+                    display: flex;
+                }
             }
 
             .filter-section {
@@ -425,6 +460,58 @@
                 width: 100%;
                 padding: 8px;
                 font-size: 14px;
+            }
+
+            /* Toggle Options Button */
+            .toggle-filters-btn {
+                display: none;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background-color: var(--primary-color);
+                color: white;
+                font-size: 24px;
+                border: none;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 999;
+                transition: all 0.3s;
+            }
+
+            .toggle-filters-btn:hover {
+                background-color: var(--primary-dark);
+                transform: scale(1.1);
+            }
+
+            .filters-sidebar.hidden {
+                display: none;
+            }
+
+            @media (max-width: 1024px) {
+                .toggle-filters-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .filters-sidebar {
+                    position: fixed;
+                    top: 0;
+                    right: 0;
+                    bottom: 0;
+                    width: 90%;
+                    max-width: 400px;
+                    z-index: 998;
+                    max-height: 100vh;
+                    display: none;
+                }
+
+                .filters-sidebar.visible {
+                    display: block;
+                }
             }
 
             /* Toast Notification */
@@ -645,7 +732,10 @@
 
             <!-- Filters Sidebar -->
             <div class="filters-sidebar">
-                <h2>Filters & Options</h2>
+                <div class="filters-header">
+                    <h2>Filters & Options</h2>
+                    <button class="close-filters-btn" id="close-filters-btn" aria-label="Close filters">✕</button>
+                </div>
 
                 <!-- Search -->
                 <div class="filter-section">
@@ -697,6 +787,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Toggle Filters Button -->
+    <button class="toggle-filters-btn" id="toggle-filters-btn" aria-label="Toggle filters">
+        ☰
+    </button>
 
     <!-- Toast Notification -->
     <div id="toast">Restaurant Selected!</div>
@@ -1147,6 +1242,44 @@
         infoModal.addEventListener('click', function(e) {
             if (e.target === infoModal) {
                 infoModal.style.display = 'none';
+            }
+        });
+
+        // Toggle filters sidebar
+        const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
+        const closeFiltersBtn = document.getElementById('close-filters-btn');
+        const sidebar = document.querySelector('.filters-sidebar');
+
+        function openFilters() {
+            sidebar.classList.add('visible');
+            toggleFiltersBtn.textContent = '✕';
+        }
+
+        function closeFilters() {
+            sidebar.classList.remove('visible');
+            toggleFiltersBtn.textContent = '☰';
+        }
+
+        toggleFiltersBtn.addEventListener('click', function() {
+            const isVisible = sidebar.classList.contains('visible');
+            if (isVisible) {
+                closeFilters();
+            } else {
+                openFilters();
+            }
+        });
+
+        closeFiltersBtn.addEventListener('click', function() {
+            closeFilters();
+        });
+
+        // Close filters on mobile when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 1024 &&
+                sidebar.classList.contains('visible') &&
+                !sidebar.contains(e.target) &&
+                e.target !== toggleFiltersBtn) {
+                closeFilters();
             }
         });
 
