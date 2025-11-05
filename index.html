@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Malmö Lunch Randomizer</title>
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
         <style>
             :root {
                 --primary-color: #2196F3;
@@ -314,8 +315,32 @@
                 background-color: #f57c00;
             }
 
+            .btn-lucky {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+
+            .btn-lucky:hover {
+                background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            }
+
             #resetButton {
                 display: none;
+            }
+
+            .selection-message {
+                text-align: center;
+                margin-top: 15px;
+                font-size: 1.2em;
+                font-weight: 600;
+                color: var(--primary-color);
+                min-height: 30px;
+                animation: fadeIn 0.5s;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
             }
 
             #arrow {
@@ -784,16 +809,16 @@
             <!-- Main Spinner Section -->
             <div class="spinner-section">
                 <!-- Statistics Bar -->
-                <div class="stats-bar">
-                    <div class="stat-item clickable" id="available-stat" title="Click to toggle filters">
-                        <div class="stat-value" id="available-count">0</div>
+                <div class="stats-bar" role="region" aria-label="Restaurant statistics">
+                    <div class="stat-item clickable" id="available-stat" title="Click to toggle filters" role="button" tabindex="0" aria-label="Toggle filters. Available restaurants count">
+                        <div class="stat-value" id="available-count" aria-live="polite">0</div>
                         <div class="stat-label">Available</div>
                     </div>
-                    <div class="stat-item">
+                    <div class="stat-item" aria-label="Favorites count">
                         <div class="stat-value" id="favorites-count">0</div>
                         <div class="stat-label">Favorites</div>
                     </div>
-                    <div class="stat-item">
+                    <div class="stat-item" aria-label="Total visits count">
                         <div class="stat-value" id="visits-count">0</div>
                         <div class="stat-label">Visits</div>
                     </div>
@@ -807,10 +832,12 @@
                     </div>
 
                     <div class="button-group">
-                        <button id="spinButton" class="btn-primary">Spin</button>
-                        <button id="quickPickButton" class="btn-success">Quick Pick</button>
-                        <button id="resetButton" class="btn-secondary">Reset</button>
+                        <button id="spinButton" class="btn-primary" aria-label="Spin the wheel to select a random restaurant">Spin</button>
+                        <button id="quickPickButton" class="btn-success" aria-label="Quick pick a restaurant instantly">Quick Pick</button>
+                        <button id="luckyButton" class="btn-lucky" aria-label="Feeling lucky - pick a restaurant excluding last 10 visits">Feeling Lucky</button>
+                        <button id="resetButton" class="btn-secondary" aria-label="Reset the spinner">Reset</button>
                     </div>
+                    <div id="selection-message" class="selection-message"></div>
                 </div>
             </div>
 
@@ -823,8 +850,9 @@
 
                 <!-- Search -->
                 <div class="filter-section">
-                    <h3>Search</h3>
-                    <input type="text" id="search-box" class="search-box" placeholder="Search restaurants...">
+                    <h3 id="search-label">Search</h3>
+                    <input type="text" id="search-box" class="search-box" placeholder="Search restaurants..." aria-labelledby="search-label" aria-describedby="search-description">
+                    <span id="search-description" style="display: none;">Type to filter restaurants by name</span>
                 </div>
 
                 <!-- Restaurant Selection -->
@@ -865,6 +893,15 @@
                     <div class="history-list" id="history-list"></div>
                 </div>
 
+                <!-- Time-Based Filter -->
+                <div class="filter-section">
+                    <h3>Opening Hours</h3>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-open-now">
+                        <span>Show only open now</span>
+                    </label>
+                </div>
+
                 <!-- Quick Actions -->
                 <div class="filter-section">
                     <h3>Quick Actions</h3>
@@ -887,10 +924,13 @@
     </button>
 
     <!-- Toast Notification -->
-    <div id="toast">Restaurant Selected!</div>
+    <div id="toast" role="status" aria-live="polite" aria-atomic="true">Restaurant Selected!</div>
+
+    <!-- Screen reader announcements -->
+    <div id="sr-announcements" role="status" aria-live="polite" aria-atomic="true" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;"></div>
 
     <!-- Restaurant Info Modal -->
-    <div id="info-modal">
+    <div id="info-modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
         <div id="info-content">
             <h4 id="modal-title"></h4>
             <div class="modal-tags" id="modal-tags"></div>
@@ -903,64 +943,96 @@
                     <span class="info-label">Visits</span>
                     <span class="info-value" id="modal-visits">0</span>
                 </div>
+                <div class="info-item" id="modal-distance-container">
+                    <span class="info-label">Distance</span>
+                    <span class="info-value" id="modal-distance">-</span>
+                </div>
             </div>
             <p id="modal-description"></p>
+            <div class="modal-info" id="modal-contact-info" style="flex-direction: column; gap: 8px;">
+                <div style="display: flex; gap: 20px;">
+                    <div class="info-item" style="flex: 1;">
+                        <span class="info-label">Hours Today</span>
+                        <span class="info-value" id="modal-hours">-</span>
+                    </div>
+                    <div class="info-item" style="flex: 1;" id="modal-phone-container">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value" id="modal-phone" style="font-size: 14px;">-</span>
+                    </div>
+                </div>
+            </div>
             <div class="modal-buttons">
-                <button id="favorite-btn" class="btn-warning">Favorite</button>
-                <a id="modal-link" href="#" target="_blank" style="flex: 1;">
+                <button id="favorite-btn" class="btn-warning" aria-label="Add to favorites">Favorite</button>
+                <a id="modal-link" href="#" target="_blank" style="flex: 1;" rel="noopener noreferrer">
                     <button class="btn-primary" style="width: 100%;">View Menu</button>
                 </a>
-                <button id="close-info" class="btn-secondary">Close</button>
+                <a id="modal-maps-link" href="#" target="_blank" style="flex: 1;" rel="noopener noreferrer">
+                    <button class="btn-success" style="width: 100%;">Open in Maps</button>
+                </a>
+                <button id="close-info" class="btn-secondary" aria-label="Close dialog">Close</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Enhanced restaurant data with cuisine types, dietary options, and price ranges
+        // Enhanced restaurant data with cuisine types, dietary options, price ranges, hours, and contact info
         const restaurants = [
-            { name: "Thap Thim", description: "Traditional Thai cuisine with a focus on the spicy flavors of Isaan region in northeastern Thailand. Lunch set 160 kr. Seven spice levels available. Located on Västergatan 9, Malmö.", menu: "https://thapthim.se/meny", cuisines: ["thai", "asian"], dietary: ["vegetarian"], price: 2 },
-            { name: "Surf Shack", description: "Known for its handcrafted smash burgers and fries. Multiple locations in Malmö including Västergatan and Beach Diner, offering a relaxed dining experience with customizable burgers.", menu: "https://www.surfshacksmashburgers.com/", cuisines: ["burger"], dietary: [], price: 2 },
-            { name: "Dockside Burgers", description: "Swedish, ecological, grass-fed beef burgers made fresh daily with a special blend of chuck, brisket, and beef shank. Lunch for 99 kr. Located at Dockplatsen in Västra Hamnen, Malmö.", menu: "https://malmo.docksideburgers.se/lunchmeny/", cuisines: ["burger", "swedish"], dietary: [], price: 1 },
-            { name: "Rosegarden", description: "An extensive Asian buffet featuring Chinese, Thai, sushi, salads, and more. Located at Stora Nygatan 59, Malmö.", menu: "https://rosegarden.se/locations/malmogrand", cuisines: ["asian"], dietary: ["vegetarian"], price: 2 },
-            { name: "Laziza", description: "Lebanese lunch buffet (135 kr) with hot and cold mezze, salads, dips, hummus, falafel, and hearty stews. Includes water, tea, and coffee. Located on Baltzarsgatan, Malmö.", menu: "https://www.laziza.se/lunch/", cuisines: ["lebanese"], dietary: ["vegetarian", "vegan", "halal"], price: 2 },
-            { name: "COOP Sallad", description: "Offers fresh salads for a quick and healthy lunch in Malmö.", menu: "TBD", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 1 },
-            { name: "Välfärden", description: "Scandinavian and international cuisine, offering a mix of meat, vegetarian, and vegan dishes. Located at Anckargripsgatan 3.", menu: "https://valfarden.nu/dagens-lunch/", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Locali", description: "Fresh, healthy poké bowls and street food inspired by Southern California, Hawaii, and Asia. Located at Nordenskiöldsgatan 11, Malmö.", menu: "https://localifood.se/meny", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Niagara", description: "Offers a wide range of lunch options from Swedish dishes to international cuisines. Located at Neptuniplan 1.", menu: "https://restaurangniagara.se/lunch/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2 },
-            { name: "Saluhallen", description: "An indoor food market with a variety of eateries offering gourmet food and casual dining. Located at Gibraltargatan 6, Malmö.", menu: "https://www.malmosaluhall.se", cuisines: ["asian", "swedish"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Kolga", description: "Classic Swedish husmanskost (home-style cuisine) with daily specials, located at Hans Michelsensgatan 1, Malmö.", menu: "https://restaurangkolga.se/lunch/", cuisines: ["swedish"], dietary: [], price: 2 },
-            { name: "Centralen", description: "Foodcourt located within Malmö Central Station.", menu: "TBD", cuisines: ["asian", "burger"], dietary: ["vegetarian"], price: 1 },
-            { name: "MENYn", description: "Grill and salad options like kebabs, gyros, and salads in Gamla Staden, Malmö.", menu: "https://restaurantguru.com/MENYn-Malmo", cuisines: ["greek"], dietary: ["vegetarian", "halal"], price: 1 },
-            { name: "Mrs Saigon", description: "Cozy Vietnamese restaurant offering pho, spring rolls, and more. Located at Engelbrektsgatan 17, Malmö.", menu: "https://www.mrs-saigon.se/", cuisines: ["vietnamese", "asian"], dietary: ["vegetarian", "vegan", "halal"], price: 2 },
-            { name: "Green Chili", description: "Indian restaurant offering tandoori, curry, and vegetarian dishes with a modern twist. Lunch special 129 kr (choose 2 dishes). Located at Lilla Torg 7, Malmö.", menu: "https://greenchili.se", cuisines: ["indian"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Victors", description: "Classic lunch menu with Swedish favorites like schnitzel and Caesar salad. Located at Lilla Torg 1, Malmö.", menu: "https://www.victors.se/meny", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2 },
-            { name: "Max", description: "Swedish fast-food chain known for burgers, including vegetarian and vegan options. Located at Stortorget 25, Malmö.", menu: "https://www.max.se/maten/meny/", cuisines: ["burger", "swedish"], dietary: ["vegetarian", "vegan"], price: 1 },
-            { name: "Spoonery", description: "Hearty soups, stews, and hotpots served with fresh, local ingredients. Multiple locations in Malmö.", menu: "https://spoonery.se", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Slagthuset", description: "Slagthuset is a cozy restaurant located in Södra Hallen, Malmö, serving lunch every weekday from 11:30 to 13:30. They offer a daily meat, fish, or vegetarian dish, along with a salad bar, soup, bread, water, and coffee.", menu: "https://slagthuset.se/en/restaurant/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2 },
-            { name: "Dirty Taco", description: "Dirty Taco offers fusion tacos with flavors from around the world, including vegan and meat options. Located at Södra Vallgatan 3, Malmö.", menu: "https://www.dirtytaco.se/meny", cuisines: ["mexican"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Braseriet Sture 1912", description: "Brasserie Sture 1912 offers traditional Swedish dishes alongside international favorites like beef tartare, veal entrecôte, and oysters in an elegant setting. Located at Adelgatan 13, Malmö.", menu: "https://sture1912.com/en/", cuisines: ["swedish"], dietary: [], price: 3 },
-            { name: "Östergatan No. 25", description: "Cozy Italian pizzeria with lunch buffet (119 kr) featuring hot pizzas, pasta, lasagna, and extensive salad bar. Located near Caroli Church in Malmö.", menu: "https://ostergatan25pizzeria.se", cuisines: ["italian"], dietary: ["vegetarian"], price: 2 },
-            { name: "Pink Head Noodle Bar", description: "Known for handmade noodles and creative dishes including Japanese ramen, Tantanmen, Shoyu, and Chinese Dan Dan and Biang Biang Mian. A must-visit for noodle lovers.", menu: "https://pinkhead.se", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Namu", description: "Michelin Bib Gourmand awarded modern Korean restaurant offering a fusion of Korean and Swedish flavors with great value for quality. Located at Landbygatan 5, Malmö.", menu: "https://namu.nu", cuisines: ["korean", "asian"], dietary: ["vegetarian"], price: 3 },
-            { name: "Zócalo", description: "Zócalo offers fresh Mexican cuisine inspired by the taquerias of San Francisco's Mission District. Located at Södergatan 3, Malmö.", menu: "https://zocalo.restaurant/food/", cuisines: ["mexican"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Ubåtshallen", description: "Ubåtshallen cook based on the properties of the raw material and believe that the best results are achieved through well-applied technology Located at Lilla Varvsgatan 47, Malmö.", menu: "https://www.ubatshallen.se/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 3 },
-            { name: "Quan", description: "Quan in the heart of Malmö offers a sophisticated twist on the traditional Asian kitchen of informal dining. Located at Mäster Johansgatan 15, Malmö.", menu: "https://quanbyquan.se/", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2 },
-            { name: "Babusia", description: "Authentic Ukrainian restaurant offering refined dining experience from breakfast to dinner. Known for traditional borscht and varenyky dumplings. Located at Citadellsvägen 5A, next to Malmö Saluhall.", menu: "https://babusia.se/en/menus/", cuisines: ["ukrainian"], dietary: ["vegetarian"], price: 3 },
-            { name: "Grekiska", description: "Greek grill & bar serving classic Greek dishes such as souvlaki, gyros, moussaka and charcoal-grilled meats. Located at Citadellsvägen 15, Malmö.", menu: "https://grekiska.se/restauranger/malmo-citadellen/", cuisines: ["greek"], dietary: ["vegetarian", "halal"], price: 2 }
+            { name: "Thap Thim", description: "Traditional Thai cuisine with a focus on the spicy flavors of Isaan region in northeastern Thailand. Lunch set 160 kr. Seven spice levels available. Located on Västergatan 9, Malmö.", menu: "https://thapthim.se/meny", cuisines: ["thai", "asian"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-22", tue: "11-22", wed: "11-22", thu: "11-22", fri: "11-22", sat: "12-22", sun: "12-22"}, phone: "+46 40 12 21 13", distance: "0.3 km", mapsUrl: "https://maps.google.com/?q=Thap+Thim+Malmö" },
+            { name: "Surf Shack", description: "Known for its handcrafted smash burgers and fries. Multiple locations in Malmö including Västergatan and Beach Diner, offering a relaxed dining experience with customizable burgers.", menu: "https://www.surfshacksmashburgers.com/", cuisines: ["burger"], dietary: [], price: 2, hours: {mon: "11-19:30", tue: "11-19:30", wed: "11-19:30", thu: "11-19:30", fri: "11-20:30", sat: "11-20:30", sun: "12-19:30"}, phone: "+46 40 23 10 00", distance: "0.4 km", mapsUrl: "https://maps.google.com/?q=Surf+Shack+Malmö" },
+            { name: "Dockside Burgers", description: "Swedish, ecological, grass-fed beef burgers made fresh daily with a special blend of chuck, brisket, and beef shank. Lunch for 99 kr. Located at Dockplatsen in Västra Hamnen, Malmö.", menu: "https://malmo.docksideburgers.se/lunchmeny/", cuisines: ["burger", "swedish"], dietary: [], price: 1, hours: {mon: "11-14", tue: "11-14", wed: "11-14", thu: "11-14", fri: "11-14", sat: "closed", sun: "closed"}, phone: "+46 40 35 35 40", distance: "1.8 km", mapsUrl: "https://maps.google.com/?q=Dockside+Burgers+Västra+Hamnen+Malmö" },
+            { name: "Rosegarden", description: "An extensive Asian buffet featuring Chinese, Thai, sushi, salads, and more. Located at Stora Nygatan 59, Malmö.", menu: "https://rosegarden.se/locations/malmogrand", cuisines: ["asian"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-21", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 12 12 68", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Rosegarden+Malmö" },
+            { name: "Laziza", description: "Lebanese lunch buffet (135 kr) with hot and cold mezze, salads, dips, hummus, falafel, and hearty stews. Includes water, tea, and coffee. Located on Baltzarsgatan, Malmö.", menu: "https://www.laziza.se/lunch/", cuisines: ["lebanese"], dietary: ["vegetarian", "vegan", "halal"], price: 2, hours: {mon: "11-15", tue: "11-15", wed: "11-15", thu: "11-15", fri: "11-15", sat: "closed", sun: "closed"}, phone: "+46 40 12 95 95", distance: "0.5 km", mapsUrl: "https://maps.google.com/?q=Laziza+Malmö" },
+            { name: "COOP Sallad", description: "Offers fresh salads for a quick and healthy lunch in Malmö.", menu: "TBD", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 1, hours: {mon: "07-21", tue: "07-21", wed: "07-21", thu: "07-21", fri: "07-21", sat: "08-21", sun: "10-21"}, phone: null, distance: "0.2 km", mapsUrl: "https://maps.google.com/?q=COOP+Malmö+Central" },
+            { name: "Välfärden", description: "Scandinavian and international cuisine, offering a mix of meat, vegetarian, and vegan dishes. Located at Anckargripsgatan 3.", menu: "https://valfarden.nu/dagens-lunch/", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-14", tue: "11-14", wed: "11-14", thu: "11-14", fri: "11-14", sat: "closed", sun: "closed"}, phone: "+46 40 12 20 33", distance: "0.7 km", mapsUrl: "https://maps.google.com/?q=Välfärden+Malmö" },
+            { name: "Locali", description: "Fresh, healthy poké bowls and street food inspired by Southern California, Hawaii, and Asia. Located at Nordenskiöldsgatan 11, Malmö.", menu: "https://localifood.se/meny", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-20", tue: "11-20", wed: "11-20", thu: "11-20", fri: "11-20", sat: "12-20", sun: "12-19"}, phone: "+46 40 12 50 50", distance: "0.8 km", mapsUrl: "https://maps.google.com/?q=Locali+Malmö" },
+            { name: "Niagara", description: "Offers a wide range of lunch options from Swedish dishes to international cuisines. Located at Neptuniplan 1.", menu: "https://restaurangniagara.se/lunch/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-14", tue: "11-14", wed: "11-14", thu: "11-14", fri: "11-14", sat: "closed", sun: "closed"}, phone: "+46 40 12 03 10", distance: "1.2 km", mapsUrl: "https://maps.google.com/?q=Restaurang+Niagara+Malmö" },
+            { name: "Saluhallen", description: "An indoor food market with a variety of eateries offering gourmet food and casual dining. Located at Gibraltargatan 6, Malmö.", menu: "https://www.malmosaluhall.se", cuisines: ["asian", "swedish"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "10-19", tue: "10-19", wed: "10-19", thu: "10-19", fri: "10-20", sat: "10-18", sun: "11-17"}, phone: "+46 40 12 41 10", distance: "0.5 km", mapsUrl: "https://maps.google.com/?q=Malmö+Saluhall" },
+            { name: "Kolga", description: "Classic Swedish husmanskost (home-style cuisine) with daily specials, located at Hans Michelsensgatan 1, Malmö.", menu: "https://restaurangkolga.se/lunch/", cuisines: ["swedish"], dietary: [], price: 2, hours: {mon: "11-14", tue: "11-14", wed: "11-14", thu: "11-14", fri: "11-14", sat: "closed", sun: "closed"}, phone: "+46 40 611 52 30", distance: "0.9 km", mapsUrl: "https://maps.google.com/?q=Restaurang+Kolga+Malmö" },
+            { name: "Centralen", description: "Foodcourt located within Malmö Central Station.", menu: "TBD", cuisines: ["asian", "burger"], dietary: ["vegetarian"], price: 1, hours: {mon: "06-23", tue: "06-23", wed: "06-23", thu: "06-23", fri: "06-23", sat: "07-23", sun: "07-23"}, phone: null, distance: "0.1 km", mapsUrl: "https://maps.google.com/?q=Malmö+Central+Station" },
+            { name: "MENYn", description: "Grill and salad options like kebabs, gyros, and salads in Gamla Staden, Malmö.", menu: "https://restaurantguru.com/MENYn-Malmo", cuisines: ["greek"], dietary: ["vegetarian", "halal"], price: 1, hours: {mon: "10-21", tue: "10-21", wed: "10-21", thu: "10-21", fri: "10-22", sat: "10-22", sun: "11-21"}, phone: null, distance: "0.4 km", mapsUrl: "https://maps.google.com/?q=MENYn+Malmö" },
+            { name: "Mrs Saigon", description: "Cozy Vietnamese restaurant offering pho, spring rolls, and more. Located at Engelbrektsgatan 17, Malmö.", menu: "https://www.mrs-saigon.se/", cuisines: ["vietnamese", "asian"], dietary: ["vegetarian", "vegan", "halal"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-21", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 12 41 41", distance: "0.7 km", mapsUrl: "https://maps.google.com/?q=Mrs+Saigon+Malmö" },
+            { name: "Green Chili", description: "Indian restaurant offering tandoori, curry, and vegetarian dishes with a modern twist. Lunch special 129 kr (choose 2 dishes). Located at Lilla Torg 7, Malmö.", menu: "https://greenchili.se", cuisines: ["indian"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11:30-14:30", tue: "11:30-14:30", wed: "11:30-14:30", thu: "11:30-14:30", fri: "11:30-14:30", sat: "closed", sun: "closed"}, phone: "+46 40 307744", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Green+Chili+Malmö" },
+            { name: "Victors", description: "Classic lunch menu with Swedish favorites like schnitzel and Caesar salad. Located at Lilla Torg 1, Malmö.", menu: "https://www.victors.se/meny", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-22", tue: "11-22", wed: "11-22", thu: "11-23", fri: "11-01", sat: "11-01", sun: "11-22"}, phone: "+46 40 12 76 50", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Victors+Malmö" },
+            { name: "Max", description: "Swedish fast-food chain known for burgers, including vegetarian and vegan options. Located at Stortorget 25, Malmö.", menu: "https://www.max.se/maten/meny/", cuisines: ["burger", "swedish"], dietary: ["vegetarian", "vegan"], price: 1, hours: {mon: "10-22", tue: "10-22", wed: "10-22", thu: "10-22", fri: "10-23", sat: "10-23", sun: "10-22"}, phone: "+46 40 698 82 00", distance: "0.5 km", mapsUrl: "https://maps.google.com/?q=Max+Stortorget+Malmö" },
+            { name: "Spoonery", description: "Hearty soups, stews, and hotpots served with fresh, local ingredients. Multiple locations in Malmö.", menu: "https://spoonery.se", cuisines: ["swedish"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11:30-21", tue: "11:30-21", wed: "11:30-21", thu: "11:30-21", fri: "11:30-21", sat: "11:30-21", sun: "11:30-21"}, phone: "+46 40 23 60 12", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Spoonery+Malmö" },
+            { name: "Slagthuset", description: "Slagthuset is a cozy restaurant located in Södra Hallen, Malmö, serving lunch every weekday from 11:30 to 13:30. They offer a daily meat, fish, or vegetarian dish, along with a salad bar, soup, bread, water, and coffee.", menu: "https://slagthuset.se/en/restaurant/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 2, hours: {mon: "11:30-13:30", tue: "11:30-13:30", wed: "11:30-13:30", thu: "11:30-13:30", fri: "11:30-13:30", sat: "closed", sun: "closed"}, phone: "+46 40 12 25 20", distance: "1.5 km", mapsUrl: "https://maps.google.com/?q=Slagthuset+Malmö" },
+            { name: "Dirty Taco", description: "Dirty Taco offers fusion tacos with flavors from around the world, including vegan and meat options. Located at Södra Vallgatan 3, Malmö.", menu: "https://www.dirtytaco.se/meny", cuisines: ["mexican"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-22", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 23 50 50", distance: "0.8 km", mapsUrl: "https://maps.google.com/?q=Dirty+Taco+Malmö" },
+            { name: "Braseriet Sture 1912", description: "Brasserie Sture 1912 offers traditional Swedish dishes alongside international favorites like beef tartare, veal entrecôte, and oysters in an elegant setting. Located at Adelgatan 13, Malmö.", menu: "https://sture1912.com/en/", cuisines: ["swedish"], dietary: [], price: 3, hours: {mon: "11:30-14", tue: "11:30-14", wed: "11:30-14", thu: "11:30-14", fri: "11:30-14", sat: "closed", sun: "closed"}, phone: "+46 40 23 09 10", distance: "0.7 km", mapsUrl: "https://maps.google.com/?q=Brasserie+Sture+1912+Malmö" },
+            { name: "Östergatan No. 25", description: "Cozy Italian pizzeria with lunch buffet (119 kr) featuring hot pizzas, pasta, lasagna, and extensive salad bar. Located near Caroli Church in Malmö.", menu: "https://ostergatan25pizzeria.se", cuisines: ["italian"], dietary: ["vegetarian"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-21", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 611 15 15", distance: "0.4 km", mapsUrl: "https://maps.google.com/?q=Östergatan+25+Pizzeria+Malmö" },
+            { name: "Pink Head Noodle Bar", description: "Known for handmade noodles and creative dishes including Japanese ramen, Tantanmen, Shoyu, and Chinese Dan Dan and Biang Biang Mian. A must-visit for noodle lovers.", menu: "https://pinkhead.se", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11:30-14", tue: "11:30-15", wed: "11:30-15", thu: "11:30-15", fri: "11:30-15", sat: "12-16", sun: "12-14:30"}, phone: "+46 40 30 50 50", distance: "0.5 km", mapsUrl: "https://maps.google.com/?q=Pink+Head+Noodle+Bar+Malmö" },
+            { name: "Namu", description: "Michelin Bib Gourmand awarded modern Korean restaurant offering a fusion of Korean and Swedish flavors with great value for quality. Located at Landbygatan 5, Malmö.", menu: "https://namu.nu", cuisines: ["korean", "asian"], dietary: ["vegetarian"], price: 3, hours: {mon: "closed", tue: "17-22", wed: "17-22", thu: "17-22", fri: "17-22", sat: "17-22", sun: "17-22"}, phone: "+46 40 23 03 30", distance: "0.9 km", mapsUrl: "https://maps.google.com/?q=Namu+Malmö" },
+            { name: "Zócalo", description: "Zócalo offers fresh Mexican cuisine inspired by the taquerias of San Francisco's Mission District. Located at Södergatan 3, Malmö.", menu: "https://zocalo.restaurant/food/", cuisines: ["mexican"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-21", tue: "11-21", wed: "11-21", thu: "11-22", fri: "11-22", sat: "12-22", sun: "12-21"}, phone: "+46 40 12 22 80", distance: "0.3 km", mapsUrl: "https://maps.google.com/?q=Zócalo+Malmö" },
+            { name: "Ubåtshallen", description: "Ubåtshallen cook based on the properties of the raw material and believe that the best results are achieved through well-applied technology Located at Lilla Varvsgatan 47, Malmö.", menu: "https://www.ubatshallen.se/", cuisines: ["swedish"], dietary: ["vegetarian"], price: 3, hours: {mon: "closed", tue: "17-23", wed: "17-23", thu: "17-23", fri: "17-23", sat: "17-23", sun: "closed"}, phone: "+46 40 12 80 40", distance: "1.9 km", mapsUrl: "https://maps.google.com/?q=Ubåtshallen+Malmö" },
+            { name: "Quan", description: "Quan in the heart of Malmö offers a sophisticated twist on the traditional Asian kitchen of informal dining. Located at Mäster Johansgatan 15, Malmö.", menu: "https://quanbyquan.se/", cuisines: ["asian"], dietary: ["vegetarian", "vegan"], price: 2, hours: {mon: "11-22", tue: "11-22", wed: "11-22", thu: "11-23", fri: "11-23", sat: "12-23", sun: "12-22"}, phone: "+46 40 23 25 25", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Quan+Malmö" },
+            { name: "Babusia", description: "Authentic Ukrainian restaurant offering refined dining experience from breakfast to dinner. Known for traditional borscht and varenyky dumplings. Located at Citadellsvägen 5A, next to Malmö Saluhall.", menu: "https://babusia.se/en/menus/", cuisines: ["ukrainian"], dietary: ["vegetarian"], price: 3, hours: {mon: "08-22", tue: "08-22", wed: "08-22", thu: "08-22", fri: "08-22", sat: "09-22", sun: "09-22"}, phone: "+46 768 757 151", distance: "0.6 km", mapsUrl: "https://maps.google.com/?q=Babusia+Malmö" },
+            { name: "Grekiska", description: "Greek grill & bar serving classic Greek dishes such as souvlaki, gyros, moussaka and charcoal-grilled meats. Located at Citadellsvägen 15, Malmö.", menu: "https://grekiska.se/restauranger/malmo-citadellen/", cuisines: ["greek"], dietary: ["vegetarian", "halal"], price: 2, hours: {mon: "closed", tue: "11-21", wed: "11-21", thu: "11-21", fri: "11-22", sat: "12-22", sun: "12-19"}, phone: "+46 40 800 84", distance: "0.7 km", mapsUrl: "https://maps.google.com/?q=Grekiska+Malmö" }
         ];
 
         // ====== STATE MANAGEMENT ======
         let activeRestaurants = [...restaurants];
         let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         let visitHistory = JSON.parse(localStorage.getItem('visitHistory') || '[]');
-        let selectedRestaurants = new Set(restaurants.map(r => r.name)); // All selected by default
-        let selectedCuisines = new Set();
-        let selectedDietary = new Set();
-        let selectedPrices = new Set([1, 2, 3]);
-        let excludeRecent = false;
+        let savedPreferences = JSON.parse(localStorage.getItem('filterPreferences') || '{}');
+        let selectedRestaurants = new Set(savedPreferences.selectedRestaurants || restaurants.map(r => r.name));
+        let selectedCuisines = new Set(savedPreferences.selectedCuisines || []);
+        let selectedDietary = new Set(savedPreferences.selectedDietary || []);
+        let selectedPrices = new Set(savedPreferences.selectedPrices || [1, 2, 3]);
+        let excludeRecent = savedPreferences.excludeRecent || false;
+        let showOpenNow = savedPreferences.showOpenNow || false;
         let searchQuery = '';
         let spinning = false;
         let currentRestaurant = null;
+
+        const funMessages = [
+            "Time to eat at...",
+            "Your lunch adventure awaits at...",
+            "Heading to...",
+            "Let's try...",
+            "Lunch decision made!",
+            "Your taste buds chose...",
+            "Food time at...",
+            "Bon appétit at..."
+        ];
 
         // ====== DOM ELEMENTS ======
         const carousel = document.getElementById('carousel');
@@ -978,6 +1050,62 @@
 
         function saveHistory() {
             localStorage.setItem('visitHistory', JSON.stringify(visitHistory));
+        }
+
+        function saveFilterPreferences() {
+            const prefs = {
+                selectedRestaurants: Array.from(selectedRestaurants),
+                selectedCuisines: Array.from(selectedCuisines),
+                selectedDietary: Array.from(selectedDietary),
+                selectedPrices: Array.from(selectedPrices),
+                excludeRecent: excludeRecent,
+                showOpenNow: showOpenNow
+            };
+            localStorage.setItem('filterPreferences', JSON.stringify(prefs));
+        }
+
+        function isRestaurantOpen(restaurant) {
+            if (!restaurant.hours) return true; // Assume open if no hours data
+
+            const now = new Date();
+            const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const dayKey = dayNames[now.getDay()];
+            const hours = restaurant.hours[dayKey];
+
+            if (!hours || hours === 'closed') return false;
+
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            const [openTime, closeTime] = hours.split('-');
+
+            const [openHour, openMin = 0] = openTime.split(':').map(Number);
+            const [closeHour, closeMin = 0] = closeTime.split(':').map(Number);
+
+            const openMinutes = openHour * 60 + openMin;
+            let closeMinutes = closeHour * 60 + closeMin;
+
+            // Handle times past midnight (like "11-01" for 11am to 1am)
+            if (closeMinutes < openMinutes) {
+                closeMinutes += 24 * 60;
+            }
+
+            return currentTime >= openMinutes && currentTime <= closeMinutes;
+        }
+
+        function triggerConfetti() {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+
+        function showSelectionMessage(restaurantName) {
+            const message = funMessages[Math.floor(Math.random() * funMessages.length)];
+            const messageEl = document.getElementById('selection-message');
+            messageEl.textContent = `${message} ${restaurantName}!`;
+            setTimeout(() => {
+                messageEl.textContent = '';
+            }, 5000);
         }
 
         function addToHistory(restaurant) {
@@ -1056,6 +1184,11 @@
                     return false;
                 }
 
+                // Open now filter
+                if (showOpenNow && !isRestaurantOpen(restaurant)) {
+                    return false;
+                }
+
                 // Recent visits filter
                 if (excludeRecent && getRecentVisits().includes(restaurant.name)) {
                     return false;
@@ -1070,6 +1203,7 @@
                 duplicateItems(3);
             }
             updateStats();
+            saveFilterPreferences();
         }
 
         // ====== UI UPDATE FUNCTIONS ======
@@ -1142,6 +1276,35 @@
             document.getElementById('modal-price').textContent = getPriceSymbol(restaurant.price);
             document.getElementById('modal-visits').textContent = getVisitCount(restaurant.name);
 
+            // Distance
+            document.getElementById('modal-distance').textContent = restaurant.distance || '-';
+
+            // Hours today
+            if (restaurant.hours) {
+                const now = new Date();
+                const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                const dayKey = dayNames[now.getDay()];
+                const hours = restaurant.hours[dayKey];
+                const hoursText = hours === 'closed' ? 'Closed' : hours || '-';
+                const isOpen = isRestaurantOpen(restaurant);
+                document.getElementById('modal-hours').textContent = hoursText;
+                document.getElementById('modal-hours').style.color = isOpen ? 'var(--success-color)' : 'var(--text-dark)';
+            } else {
+                document.getElementById('modal-hours').textContent = '-';
+                document.getElementById('modal-hours').style.color = 'var(--text-dark)';
+            }
+
+            // Phone
+            document.getElementById('modal-phone').textContent = restaurant.phone || '-';
+
+            // Maps link
+            if (restaurant.mapsUrl) {
+                document.getElementById('modal-maps-link').href = restaurant.mapsUrl;
+                document.getElementById('modal-maps-link').style.display = '';
+            } else {
+                document.getElementById('modal-maps-link').style.display = 'none';
+            }
+
             // Tags
             const tagsContainer = document.getElementById('modal-tags');
             tagsContainer.innerHTML = '';
@@ -1199,6 +1362,8 @@
                 const selectedRestaurant = activeRestaurants[randomIndex];
                 addToHistory(selectedRestaurant);
                 showToast(`Selected: ${selectedRestaurant.name}`);
+                showSelectionMessage(selectedRestaurant.name);
+                triggerConfetti();
                 arrow.classList.remove('spin');
                 spinning = false;
                 resetButton.style.display = "block";
@@ -1252,6 +1417,39 @@
                 `;
                 dietaryFilters.appendChild(label);
             });
+        }
+
+        function restoreSavedPreferences() {
+            // Restore restaurant selections
+            document.querySelectorAll('.restaurant-filter').forEach(checkbox => {
+                checkbox.checked = selectedRestaurants.has(checkbox.value);
+            });
+
+            // Restore cuisine filters
+            document.querySelectorAll('.cuisine-filter').forEach(checkbox => {
+                checkbox.checked = selectedCuisines.has(checkbox.value);
+            });
+
+            // Restore dietary filters
+            document.querySelectorAll('.dietary-filter').forEach(checkbox => {
+                checkbox.checked = selectedDietary.has(checkbox.value);
+            });
+
+            // Restore price filters
+            document.querySelectorAll('.price-option').forEach(option => {
+                const price = parseInt(option.dataset.price);
+                if (selectedPrices.has(price)) {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+
+            // Restore exclude recent
+            document.getElementById('exclude-recent').checked = excludeRecent;
+
+            // Restore show open now
+            document.getElementById('show-open-now').checked = showOpenNow;
         }
 
         // ====== EVENT LISTENERS ======
@@ -1329,6 +1527,45 @@
             applyFilters();
         });
 
+        // Show only open now
+        document.getElementById('show-open-now').addEventListener('change', function(e) {
+            showOpenNow = e.target.checked;
+            applyFilters();
+        });
+
+        // Feeling Lucky button - excludes last 10 visits and spins
+        document.getElementById('luckyButton').addEventListener('click', function() {
+            if (activeRestaurants.length === 0) {
+                showToast('No restaurants match your filters!');
+                return;
+            }
+
+            // Temporarily exclude last 10 visits
+            const last10Visits = [];
+            for (const visit of visitHistory) {
+                if (!last10Visits.includes(visit.name)) {
+                    last10Visits.push(visit.name);
+                }
+                if (last10Visits.length >= 10) break;
+            }
+
+            // Filter out last 10 visits
+            const luckyRestaurants = activeRestaurants.filter(r => !last10Visits.includes(r.name));
+
+            if (luckyRestaurants.length === 0) {
+                showToast('All restaurants have been visited recently! Try clearing history or adjusting filters.');
+                return;
+            }
+
+            // Pick random restaurant from lucky pool
+            const randomRestaurant = luckyRestaurants[Math.floor(Math.random() * luckyRestaurants.length)];
+            addToHistory(randomRestaurant);
+            showToast(`Feeling lucky? Selected: ${randomRestaurant.name}`);
+            showSelectionMessage(randomRestaurant.name);
+            triggerConfetti();
+            showInfo(randomRestaurant);
+        });
+
         // Quick actions
         document.getElementById('select-all').addEventListener('click', function() {
             // Reset all filters
@@ -1386,6 +1623,18 @@
             }
         });
 
+        // Keyboard accessibility for modal (Escape key)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (infoModal.style.display === 'block') {
+                    infoModal.style.display = 'none';
+                }
+                if (sidebar.classList.contains('visible')) {
+                    closeFilters();
+                }
+            }
+        });
+
         // Toggle filters sidebar
         const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
         const closeFiltersBtn = document.getElementById('close-filters-btn');
@@ -1427,6 +1676,19 @@
             }
         });
 
+        // Keyboard support for available stat button
+        document.getElementById('available-stat').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const isVisible = sidebar.classList.contains('visible');
+                if (isVisible) {
+                    closeFilters();
+                } else {
+                    openFilters();
+                }
+            }
+        });
+
         // Click backdrop to close filters
         backdrop.addEventListener('click', function() {
             closeFilters();
@@ -1434,7 +1696,8 @@
 
         // ====== INITIALIZATION ======
         initializeFilters();
-        duplicateItems(3);
+        restoreSavedPreferences();
+        applyFilters();
         updateStats();
         updateHistoryDisplay();
     </script>
